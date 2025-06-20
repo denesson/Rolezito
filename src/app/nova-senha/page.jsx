@@ -33,22 +33,36 @@ export default function NovaSenhaPage() {
   }
 
   return (
-    <div className="max-w-md mx-auto mt-10 p-6 bg-white shadow-md rounded-xl space-y-4">
-      <h2 className="text-2xl font-bold text-center">Nova Senha</h2>
+    <div className="min-h-screen bg-[#111827] flex items-center justify-center px-4">
+      <div className="max-w-md w-full bg-[#1F2937] border border-[#334155] shadow rounded-xl p-6 space-y-4 text-white">
+        <h2 className="text-3xl font-bold text-center text-[#E11D48]">Nova Senha</h2>
 
-      {erro && <p className="text-red-500">{erro}</p>}
-      {mensagem && <p className="text-green-500">{mensagem}</p>}
+        {erro && <p className="text-red-500 text-center">{erro}</p>}
+        {mensagem && <p className="text-green-500 text-center">{mensagem}</p>}
 
-      <input type="password" placeholder="Nova senha" className="w-full border px-3 py-2 rounded"
-        value={novaSenha} onChange={(e) => setNovaSenha(e.target.value)} />
+        <input
+          type="password"
+          placeholder="Nova senha"
+          className="w-full border border-[#334155] bg-[#111827] text-white placeholder-gray-400 px-3 py-2 rounded focus:outline-none focus:ring-2 focus:ring-[#E11D48]"
+          value={novaSenha}
+          onChange={(e) => setNovaSenha(e.target.value)}
+        />
 
-      <input type="password" placeholder="Confirmar nova senha" className="w-full border px-3 py-2 rounded"
-        value={confirmar} onChange={(e) => setConfirmar(e.target.value)} />
+        <input
+          type="password"
+          placeholder="Confirmar nova senha"
+          className="w-full border border-[#334155] bg-[#111827] text-white placeholder-gray-400 px-3 py-2 rounded focus:outline-none focus:ring-2 focus:ring-[#E11D48]"
+          value={confirmar}
+          onChange={(e) => setConfirmar(e.target.value)}
+        />
 
-      <button onClick={handleSalvar}
-        className="w-full bg-blue-600 text-white font-semibold py-2 rounded hover:bg-blue-700">
-        Salvar nova senha
-      </button>
+        <button
+          onClick={handleSalvar}
+          className="w-full bg-[#E11D48] hover:bg-[#F43F5E] text-white font-semibold py-2 rounded transition-all"
+        >
+          Salvar nova senha
+        </button>
+      </div>
     </div>
   )
 }

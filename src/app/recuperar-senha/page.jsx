@@ -25,27 +25,29 @@ export default function RecuperarSenhaPage() {
 
   return (
     <>
-    <NavMenu />
-      <div className="max-w-md mx-auto mt-10 p-6 bg-white shadow-md rounded-xl space-y-4">
-        <h2 className="text-2xl font-bold text-center">Recuperar Senha</h2>
+      <NavMenu />
+      <div className="min-h-screen flex items-center justify-center bg-[#111827] px-4">
+        <div className="max-w-md w-full bg-[#1F2937] shadow-lg rounded-xl p-6 space-y-5">
+          <h2 className="text-3xl font-bold text-center text-[#E11D48] mb-2">Recuperar Senha</h2>
 
-        {erro && <p className="text-red-500">{erro}</p>}
-        {mensagem && <p className="text-green-500">{mensagem}</p>}
+          {erro && <p className="text-red-500 text-sm">{erro}</p>}
+          {mensagem && <p className="text-green-500 text-sm">{mensagem}</p>}
 
-        <input
-          type="email"
-          placeholder="Digite seu e-mail"
-          className="w-full border px-3 py-2 rounded"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-        />
+          <input
+            type="email"
+            placeholder="Digite seu e-mail"
+            className="w-full border border-[#334155] px-4 py-2 rounded text-[#D1D5DB] bg-[#111827] placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#E11D48]"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+          />
 
-        <button
-          onClick={handleEnviar}
-          className="w-full bg-blue-600 text-white font-semibold py-2 rounded hover:bg-blue-700"
-        >
-          Enviar link de recuperação
-        </button>
+          <button
+            onClick={handleEnviar}
+            className="w-full bg-[#E11D48] hover:bg-[#F43F5E] text-white font-semibold py-2 rounded-full transition-all"
+          >
+            Enviar link de recuperação
+          </button>
+        </div>
       </div>
     </>
   )

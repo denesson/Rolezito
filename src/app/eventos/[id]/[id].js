@@ -1,102 +1,74 @@
 "use client"
-import { useState, useEffect } from "react"
-import { useParams } from "next/navigation"
-import Link from "next/link"
+import { useState } from "react"
+import NavMenu from "../components/NavMenu"
 
-export default function EventoDetail() {
-  const params = useParams()
-  const eventoId = params?.id
+export default function ContatoPage() {
+  const [form, setForm] = useState({ nome: "", email: "", mensagem: "" })
+  const [ok, setOk] = useState(false)
 
-  const [evento, setEvento] = useState(null)
-  const [favorito, setFavorito] = useState(false)
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    if (!eventoId) return
-    async function fetchEvento() {
-      try {
-        // Busque todos e filtre (ou ideal: crie GET /api/eventos/[id])
-        const resp = await fetch(`/api/eventos`)
-        const data = await resp.json()
-        const ev = data.find(ev => String(ev.id) === String(eventoId))
-        setEvento(ev)
-        setFavorito(ev?.favorito ?? false)
-      } catch {
-        setEvento(null)
-      } finally {
-        setLoading(false)
-      }
-    }
-    fetchEvento()
-  }, [eventoId])
-
-  if (loading) return <div style={{ padding: 32 }}>Carregando evento...</div>
-  if (!evento) return <div style={{ padding: 32 }}>Evento não encontrado</div>
+  async function handleSubmit(e) {
+    e.preventDefault()
+    setOk(true)
+    setForm({ nome: "", email: "", mensagem: "" })
+    setTimeout(() => setOk(false), 5000)
+  }
 
   return (
-    <main style={{
-      minHeight: "100vh", background: "#fafafa", padding: 24, maxWidth: 600, margin: "0 auto"
-    }}>
-      <div style={{ marginBottom: 18 }}>
-        <Link href="/" style={{
-          color: "#2d6cdf", textDecoration: "none", fontWeight: 500, fontSize: 15
-        }}>&larr; Voltar para Home</Link>
-      </div>
-      <div style={{
-        background: "#fff", borderRadius: 16, padding: 0,
-        boxShadow: "0 2px 16px #0001", border: "1px solid #ececec"
-      }}>
-        <img
-          src={evento.imagem || "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=400&q=80"}
-          alt={evento.nome}
-          style={{ width: "100%", height: 200, objectFit: "cover", borderTopLeftRadius: 16, borderTopRightRadius: 16 }}
-        />
-        <div style={{ padding: 28 }}>
-          <h1 style={{ fontSize: 26, marginBottom: 6 }}>{evento.nome}</h1>
-          <div style={{ color: "#888", marginBottom: 4 }}>
-            {(evento.data
-              ? new Date(evento.data).toLocaleString("pt-BR")
-              : evento.horario) + " · " + evento.local}
-          </div>
-          <div style={{ margin: "14px 0", color: "#444" }}>{evento.descricao}</div>
-          <div style={{ marginBottom: 10 }}>
-            <span style={{
-              color: "#2d6cdf", fontWeight: "bold", fontSize: 17
-            }}>{evento.preco}</span>
-          </div>
-          <div style={{ display: "flex", gap: 14, marginTop: 18 }}>
+    <>
+      <NavMenu />
+      <main className="min-h-screen bg-[#111827] text-white px-4 py-12 flex items-center justify-center">
+        <div className="w-full max-w-xl">
+          <h1 className="text-3xl font-bold mb-4 text-[#E11D48]">Contato</h1>
+          <p className="text-[#D1D5DB] mb-6">
+            Tem dúvidas, sugestões ou quer divulgar seu evento? Envie sua mensagem!
+          </p>
+
+          {ok && (
+            <div className="bg-green-600/20 text-green-400 px-4 py-2 rounded mb-4 text-center font-semibold shadow">
+              Mensagem enviada com sucesso! 😉
+            </div>
+          )}
+
+          <form
+            onSubmit={handleSubmit}
+            className="space-y-4 bg-[#1F2937] p-6 rounded-xl shadow-md border border-[#334155]"
+          >
+            <input
+              type="text"
+              name="nome"
+              placeholder="Seu nome"
+              value={form.nome}
+              onChange={e => setForm(f => ({ ...f, nome: e.target.value }))}
+              required
+              className="w-full p-3 border border-[#334155] rounded bg-[#111827] text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#E11D48]"
+            />
+            <input
+              type="email"
+              name="email"
+              placeholder="Seu email"
+              value={form.email}
+              onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
+              required
+              className="w-full p-3 border border-[#334155] rounded bg-[#111827] text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#E11D48]"
+            />
+            <textarea
+              name="mensagem"
+              placeholder="Sua mensagem"
+              value={form.mensagem}
+              onChange={e => setForm(f => ({ ...f, mensagem: e.target.value }))}
+              required
+              rows={4}
+              className="w-full p-3 border border-[#334155] rounded bg-[#111827] text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#E11D48]"
+            />
             <button
-              onClick={() => setFavorito(fav => !fav)}
-              style={{
-                background: favorito ? "#ff4477" : "#eee",
-                color: favorito ? "#fff" : "#ff4477",
-                border: "none", borderRadius: 14, padding: "7px 18px",
-                fontWeight: "bold", cursor: "pointer", fontSize: 15
-              }}>
-              {favorito ? "★ Favorito" : "☆ Favoritar"}
+              type="submit"
+              className="bg-[#E11D48] hover:bg-[#F43F5E] text-white px-6 py-2 rounded font-semibold transition w-full"
+            >
+              Enviar
             </button>
-            <button
-              onClick={() => {
-                if (navigator.share) {
-                  navigator.share({
-                    title: evento.nome,
-                    text: evento.descricao,
-                    url: typeof window !== "undefined" ? window.location.href : ""
-                  })
-                } else {
-                  alert("Navegador não suporta compartilhamento.");
-                }
-              }}
-              style={{
-                background: "#2d6cdf", color: "#fff", border: "none",
-                borderRadius: 14, padding: "7px 18px",
-                fontWeight: "bold", cursor: "pointer", fontSize: 15
-              }}>
-              Compartilhar
-            </button>
-          </div>
+          </form>
         </div>
-      </div>
-    </main>
+      </main>
+    </>
   )
 }

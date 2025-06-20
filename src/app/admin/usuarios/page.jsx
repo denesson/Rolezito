@@ -18,7 +18,7 @@ export default function GerenciarUsuarios() {
       const resp = await fetch("/api/usuarios")
       const data = await resp.json()
       setUsuarios(data)
-    } catch (err) {
+    } catch {
       setErro("Erro ao buscar usuários")
     }
     setLoading(false)
@@ -44,41 +44,49 @@ export default function GerenciarUsuarios() {
   return (
     <>
       <NavMenu />
-      <div className="max-w-2xl mx-auto py-10">
-        <h1 className="text-2xl font-bold mb-8">Gerenciar Usuários</h1>
-        {erro && <div className="text-red-500 mb-4">{erro}</div>}
+      <div className="max-w-4xl mx-auto py-12 px-6 bg-[#fff8e1] border border-[#e0c38b] rounded-xl shadow-md">
+        <h1 className="text-3xl font-bold mb-6 text-[#7b3f00] text-center">Gerenciar Usuários</h1>
+
+        {erro && <div className="text-red-600 font-semibold mb-4 text-center">{erro}</div>}
+
         {loading ? (
-          <div>Carregando...</div>
+          <div className="text-[#5c3b00] text-center">Carregando usuários...</div>
         ) : (
-          <table className="w-full border rounded-xl overflow-hidden">
-            <thead className="bg-blue-100">
-              <tr>
-                <th className="py-2 px-3 text-left">Nome</th>
-                <th className="py-2 px-3 text-left">Email</th>
-                <th className="py-2 px-3 text-center">Tipo</th>
-                <th className="py-2 px-3 text-center"></th>
-              </tr>
-            </thead>
-            <tbody>
-              {usuarios.map((u) => (
-                <tr key={u.id} className="border-t">
-                  <td className="py-2 px-3">{u.nome}</td>
-                  <td className="py-2 px-3">{u.email}</td>
-                  <td className="py-2 px-3 text-center">
-                    {u.admin ? "Admin" : "Comum"}
-                  </td>
-                  <td className="py-2 px-3 text-center">
-                    <button
-                      className={`px-3 py-1 rounded ${u.admin ? "bg-red-500 hover:bg-red-600" : "bg-green-600 hover:bg-green-700"} text-white`}
-                      onClick={() => toggleAdmin(u.id, u.admin)}
-                    >
-                      {u.admin ? "Tornar Comum" : "Tornar Admin"}
-                    </button>
-                  </td>
+          <div className="overflow-x-auto rounded-xl shadow-sm">
+            <table className="w-full border-collapse bg-white rounded-xl overflow-hidden">
+              <thead className="bg-[#faeecf] text-[#5c3b00] font-semibold">
+                <tr>
+                  <th className="py-3 px-4 text-left">Nome</th>
+                  <th className="py-3 px-4 text-left">Email</th>
+                  <th className="py-3 px-4 text-center">Tipo</th>
+                  <th className="py-3 px-4 text-center">Ação</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {usuarios.map((u) => (
+                  <tr key={u.id} className="border-t border-[#f0e5c4] hover:bg-[#fffdf6] transition">
+                    <td className="py-3 px-4 text-[#4b2c00] font-medium">{u.nome}</td>
+                    <td className="py-3 px-4 text-[#4b2c00]">{u.email}</td>
+                    <td className="py-3 px-4 text-center text-[#4b2c00]">
+                      {u.admin ? "Admin" : "Comum"}
+                    </td>
+                    <td className="py-3 px-4 text-center">
+                      <button
+                        className={`px-4 py-2 rounded-full font-semibold text-sm shadow-sm transition ${
+                          u.admin
+                            ? "bg-[#c0392b] hover:bg-[#a93226]"
+                            : "bg-[#2e7d32] hover:bg-[#1b5e20]"
+                        } text-white`}
+                        onClick={() => toggleAdmin(u.id, u.admin)}
+                      >
+                        {u.admin ? "Tornar Comum" : "Tornar Admin"}
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
     </>

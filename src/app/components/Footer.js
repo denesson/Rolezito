@@ -1,8 +1,8 @@
 export default function Footer() {
   return (
-    <footer className="bg-gray-100 border-t border-gray-300 py-6 mt-16">
-      <div className="max-w-6xl mx-auto text-center text-gray-500 text-sm select-none">
-        Desenvolvido por Denesson Barreto &copy; {new Date().getFullYear()}
+    <footer className="bg-[#1F2937] border-t border-[#334155] py-6 mt-16">
+      <div className="max-w-6xl mx-auto text-center text-[#9CA3AF] text-sm select-none">
+        Desenvolvido por <span className="font-semibold text-[#0EA5E9]">Denesson Barreto</span> &copy; {new Date().getFullYear()}
       </div>
     </footer>
   )

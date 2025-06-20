@@ -1,8 +1,8 @@
-import React from 'react';
-import NavMenu from '../components/NavMenu';
+"use client"
+import React from "react"
+import NavMenu from "../components/NavMenu"
 
 export default function RankingPage() {
-  // MOCK — pode puxar do banco depois
   const ranking = [
     { nome: "Bar do Zé", pontuacao: 9.7 },
     { nome: "Choperia Central", pontuacao: 9.3 },
@@ -10,27 +10,30 @@ export default function RankingPage() {
   ]
 
   return (
-    <>
+    <div className="bg-[#111827] min-h-screen text-white">
       <NavMenu />
       <main className="max-w-xl mx-auto px-4 py-12">
-        <h1 className="text-3xl font-bold mb-6 text-blue-700 dark:text-blue-400">
-          Ranking de Bares
-        </h1>
-        <ol className="list-decimal pl-5 space-y-2">
+        <h1 className="text-4xl font-bold mb-8 text-[#E11D48] text-center">Ranking de Bares</h1>
+
+        <ol className="list-decimal pl-5 space-y-4">
           {ranking.map((b, i) => (
             <li
               key={i}
-              className="font-semibold flex justify-between items-center bg-white dark:bg-gray-800 px-4 py-2 rounded shadow"
+              className="bg-[#1F2937] border border-[#334155] flex justify-between items-center px-4 py-3 rounded-lg shadow-sm font-medium text-[#D1D5DB]"
             >
               <span>{b.nome}</span>
-              <span className="text-blue-700 dark:text-blue-400">{b.pontuacao}</span>
+              <span className="font-bold text-[#F43F5E]">{b.pontuacao}</span>
             </li>
           ))}
         </ol>
-        <p className="mt-8 text-gray-500 dark:text-gray-400 text-sm">
-          Quer indicar um bar ou evento? <a href="/contato" className="underline text-blue-600 dark:text-blue-400">Fale com a gente</a>
+
+        <p className="mt-10 text-center text-sm text-[#9CA3AF]">
+          Quer indicar um bar ou evento?{" "}
+          <a href="/contato" className="underline text-[#0EA5E9] hover:text-[#38BDF8]">
+            Fale com a gente
+          </a>
         </p>
       </main>
-    </>
+    </div>
   )
 }

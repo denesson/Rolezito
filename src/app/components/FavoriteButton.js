@@ -1,13 +1,11 @@
-export default function FavoriteButton({ favorito, onClick }) {
+export default function Footer() {
   return (
-    <button
-      onClick={onClick}
-      aria-label="Favoritar"
-      className={`text-2xl ml-1 transition-colors duration-200 ${
-        favorito ? "text-pink-500" : "text-gray-400 hover:text-pink-500"
-      }`}
-    >
-      {favorito ? "♥" : "♡"}
-    </button>
+    <footer className="bg-[#1F2937] border-t border-[#334155] py-6 mt-16">
+      <div className="max-w-6xl mx-auto text-center text-[#9CA3AF] text-sm tracking-wide select-none">
+        Desenvolvido por{" "}
+        <span className="font-semibold text-[#0EA5E9]">Denesson Barreto</span> &copy;{" "}
+        {new Date().getFullYear()}
+      </div>
+    </footer>
   )
 }

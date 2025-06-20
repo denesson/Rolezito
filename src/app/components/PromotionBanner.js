@@ -1,13 +1,13 @@
 export default function PromotionBanner({ onVerRelampago }) {
   return (
-    <section className="bg-blue-600 text-white px-6 py-4 rounded-b-lg max-w-6xl mx-auto flex items-center justify-between">
-      <div>
-        <h2 className="text-lg font-bold">🔥 Promoções Relâmpago!</h2>
-        <p className="text-sm opacity-90">Confira ofertas imperdíveis por tempo limitado.</p>
+    <section className="bg-gradient-to-r from-[#E11D48] to-[#F43F5E] text-white px-6 py-5 rounded-xl max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between shadow-lg mb-6">
+      <div className="text-center sm:text-left mb-3 sm:mb-0">
+        <h2 className="text-xl font-bold tracking-tight">🔥 Promoções Relâmpago!</h2>
+        <p className="text-sm opacity-90">Ofertas atualizadas em tempo real — aproveite agora.</p>
       </div>
       <button
         onClick={onVerRelampago}
-        className="bg-white text-blue-600 font-semibold rounded px-4 py-2 hover:bg-gray-100 transition"
+        className="mt-2 sm:mt-0 bg-white text-[#E11D48] font-semibold px-5 py-2 rounded-full hover:bg-[#FCE7EF] transition-all shadow-sm"
       >
         Ver Ofertas
       </button>

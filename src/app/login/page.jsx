@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation"
 import NavMenu from "../components/NavMenu"
 
 export default function LoginPage() {
-  const [email, setEmail] = useState("")
+  const [nome, setNome] = useState("")
   const [senha, setSenha] = useState("")
   const [erro, setErro] = useState("")
   const router = useRouter()
@@ -15,14 +15,14 @@ export default function LoginPage() {
     const resp = await fetch("/api/auth/login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, senha }),
+      body: JSON.stringify({ nome, senha }),
     })
     const data = await resp.json()
     if (!resp.ok) {
       setErro(data.erro || "Erro ao logar")
       return
     }
-    // Salva token (poderia usar cookie seguro no back depois)
+
     localStorage.setItem("user", JSON.stringify({
       nome: data.nome,
       email: data.email,
@@ -38,10 +38,10 @@ export default function LoginPage() {
         <h1 className="text-2xl font-bold mb-4 text-center">Login Admin</h1>
         <form onSubmit={handleLogin} className="space-y-4">
           <input
-            type="email"
-            placeholder="E-mail"
-            value={email}
-            onChange={e => setEmail(e.target.value)}
+            type="text"
+            placeholder="Nome de usuário"
+            value={nome}
+            onChange={e => setNome(e.target.value)}
             required
             className="w-full p-2 border rounded"
           />
@@ -53,7 +53,9 @@ export default function LoginPage() {
             required
             className="w-full p-2 border rounded"
           />
+
           {erro && <div className="text-red-600 text-sm">{erro}</div>}
+
           <button
             type="submit"
             className="w-full bg-blue-600 text-white py-2 rounded font-semibold hover:bg-blue-700"
@@ -61,6 +63,16 @@ export default function LoginPage() {
             Entrar
           </button>
         </form>
+
+        <div className="text-sm text-center mt-4 space-y-1">
+          <p>
+            Não tem conta?{" "}
+            <a href="/cadastro" className="text-blue-600 underline">Cadastre-se</a>
+          </p>
+          <p>
+            <a href="/recuperar-senha" className="text-blue-600 underline">Esqueceu sua senha?</a>
+          </p>
+        </div>
       </main>
     </>
   )

@@ -1,6 +1,7 @@
 "use client"
 import { useEffect, useState } from "react"
 import Link from "next/link"
+import NavMenu from "../components/NavMenu"
 
 export default function PromocoesPage() {
   const [promocoes, setPromocoes] = useState([])
@@ -28,6 +29,8 @@ export default function PromocoesPage() {
   if (loading) return <div className="text-center py-20 text-gray-400">Carregando promoções...</div>
 
   return (
+    <>
+    <NavMenu />
     <main className="max-w-xl mx-auto px-4 py-12">
       <h1 className="text-3xl font-bold mb-6 text-blue-700 dark:text-blue-400">
         Promoções Especiais
@@ -57,5 +60,6 @@ export default function PromocoesPage() {
         Para incluir sua promoção, <Link href="/contato" className="underline text-blue-600 dark:text-blue-400">fale com a gente</Link>!
       </p>
     </main>
+    </>
   )
 }

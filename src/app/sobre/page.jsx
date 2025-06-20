@@ -1,8 +1,11 @@
 "use client"
 import Link from "next/link"
+import NavMenu from "../components/NavMenu"
 
 export default function SobrePage() {
   return (
+    <>
+    <NavMenu />
     <div className="max-w-2xl mx-auto py-12 px-4">
       <h1 className="text-3xl font-extrabold text-blue-700 mb-6">Sobre o Rolezito</h1>
       <p className="text-lg mb-4 text-gray-800">
@@ -24,5 +27,6 @@ export default function SobrePage() {
         <span className="text-sm text-gray-500">Feito com ❤️ por Denesson Barreto e equipe. 2024.</span>
       </div>
     </div>
+    </>
   )
 }

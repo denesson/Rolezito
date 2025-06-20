@@ -6,13 +6,13 @@ const prisma = new PrismaClient()
 
 export async function POST(request) {
   try {
-    const { email, senha } = await request.json()
+    const { nome, senha } = await request.json()
 
     if (!email || !senha) {
       return Response.json({ erro: "Preencha email e senha" }, { status: 400 })
     }
 
-    const user = await prisma.usuario.findUnique({ where: { email } })
+    const user = await prisma.usuario.findUnique({ where: { nome } })
     if (!user) {
       return Response.json({ erro: "Usuário não encontrado" }, { status: 401 })
     }

@@ -3,6 +3,7 @@ import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { useState } from "react"
 import { useAuth } from "../../hooks/useAuth"
+import ThemeToggle from "./ThemeToggle"
 
 export default function NavMenu() {
   const pathname = usePathname()
@@ -77,7 +78,6 @@ export default function NavMenu() {
             </>
           )}
         </ul>
-
         <div className="flex items-center gap-2">
           {user ? (
             <>

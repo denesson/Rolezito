@@ -28,7 +28,7 @@
     ".next/types/**/*.ts",
     "**/*.ts",
     "**/*.tsx"
-  ],
+, "src/app/nova-senha/NovaSenhaForm.jsx"  ],
   "exclude": [
     "node_modules"
   ]

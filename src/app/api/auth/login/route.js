@@ -12,7 +12,7 @@ export async function POST(request) {
       return Response.json({ erro: "Preencha nome e senha" }, { status: 400 })
     }
 
-    const user = await prisma.usuario.findUnique({ where: { nome } })
+    const user = await prisma.usuario.findFirst({ where: { nome } })
     if (!user) {
       return Response.json({ erro: "Usuário não encontrado" }, { status: 401 })
     }

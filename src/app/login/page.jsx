@@ -2,6 +2,7 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import NavMenu from "../components/NavMenu"
+import Footer from "../components/Footer"
 
 export default function LoginPage() {
   const [nome, setNome] = useState("")
@@ -78,6 +79,7 @@ export default function LoginPage() {
             </p>
           </div>
         </div>
+        <Footer />
       </main>
     </>
   )

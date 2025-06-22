@@ -1,11 +1,20 @@
-export default function Footer() {
+// components/FavoriteButton.jsx
+"use client"
+import React from "react"
+import { Heart } from "lucide-react"
+
+export default function FavoriteButton({ favorito, onClick }) {
   return (
-    <footer className="bg-[#1F2937] border-t border-[#334155] py-6 mt-16">
-      <div className="max-w-6xl mx-auto text-center text-[#9CA3AF] text-sm tracking-wide select-none">
-        Desenvolvido por{" "}
-        <span className="font-semibold text-[#0EA5E9]">Denesson Barreto</span> &copy;{" "}
-        {new Date().getFullYear()}
-      </div>
-    </footer>
+    <button
+      onClick={onClick}
+      className="p-1 transition-colors"
+      aria-label={favorito ? "Remover dos favoritos" : "Adicionar aos favoritos"}
+      title={favorito ? "Remover dos favoritos" : "Adicionar aos favoritos"}
+    >
+      <Heart
+        size={20}
+        className={favorito ? "text-pink-500" : "text-gray-400 hover:text-pink-500"}
+      />
+    </button>
   )
 }

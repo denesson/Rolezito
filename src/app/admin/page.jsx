@@ -19,14 +19,19 @@ export default function AdminPanel() {
 
   const router = useRouter()
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const token = localStorage.getItem("token")
-      const admin = localStorage.getItem("admin")
-      if (!token || admin !== "true") {
-        router.push("/login")
-      }
+  if (typeof window !== "undefined") {
+    const userStr = localStorage.getItem("user")
+    if (!userStr) {
+      router.push("/login")
+      return
     }
-  }, [])
+
+    const user = JSON.parse(userStr)
+    if (!user.admin) {
+      router.push("/login")
+    }
+  }
+}, [])
 
   useEffect(() => {
     fetchEventos()

@@ -1,10 +1,10 @@
-// components/EventCard.jsx
+// src/app/components/EventCard.jsx
 "use client"
 import Link from "next/link"
 import FavoriteButton from "./FavoriteButton"
 import { Share2 } from "lucide-react"
 
-export default function EventCard({ evento, onFavoritar }) {
+export default function EventCard({ evento, favorito, onFavoritar }) {
   const handleShare = (e) => {
     e.preventDefault()
     const url = `${window.location.origin}/eventos/${evento.id}`
@@ -23,7 +23,6 @@ export default function EventCard({ evento, onFavoritar }) {
   return (
     <div className="bg-[#1F2937] border border-[#334155] rounded-2xl overflow-hidden shadow-md mb-5">
       <Link href={`/eventos/${evento.id}`} className="block no-underline">
-        {/* Imagem */}
         {evento.imagem && (
           <img
             src={evento.imagem}
@@ -34,23 +33,22 @@ export default function EventCard({ evento, onFavoritar }) {
         )}
 
         <div className="p-4 space-y-2">
-          {/* Título + Ações */}
           <div className="flex items-start justify-between">
             <h3 className="text-white font-semibold text-xl leading-snug">
               {evento.nome}
             </h3>
             <div className="flex items-center gap-2">
-              {/* Compartilhar */}
+              {/* Botão de compartilhar */}
               <button
                 onClick={handleShare}
-                className="p-1 text-gray-400 hover:text-blue-400 transition"
+                className="p-1 text-gray-400 hover:text-blue-400 transition-colors"
                 title="Compartilhar evento"
               >
                 <Share2 size={20} />
               </button>
-              {/* Favoritar */}
+              {/* Botão de favorito */}
               <FavoriteButton
-                favorito={evento.favorito}
+                favorito={favorito}
                 onClick={(e) => {
                   e.preventDefault()
                   onFavoritar(evento.id)
@@ -59,16 +57,14 @@ export default function EventCard({ evento, onFavoritar }) {
             </div>
           </div>
 
-          {/* Subtítulo Local — Categoria */}
           <p className="text-gray-400 text-sm">
-            {evento.local} — {evento.categoria}
+            {evento.local} — {Array.isArray(evento.categoria)
+              ? evento.categoria.join(", ")
+              : evento.categoria}
           </p>
 
-          {/* Link Ver no mapa */}
           <a
-            href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-              evento.local
-            )}`}
+            href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(evento.local)}`}
             target="_blank"
             rel="noopener noreferrer"
             className="text-[#0EA5E9] underline text-sm"
@@ -76,15 +72,12 @@ export default function EventCard({ evento, onFavoritar }) {
             Ver no mapa
           </a>
 
-          {/* Descrição */}
           <p className="text-gray-300 text-sm">{evento.descricao}</p>
 
-          {/* Rodapé com preço e data */}
           <div className="flex items-center justify-between text-sm mt-2">
             <span className="text-green-400 font-semibold">{evento.preco}</span>
             <span className="text-gray-400">
-              {evento.data &&
-                new Date(evento.data).toLocaleString("pt-BR")}
+              {evento.data && new Date(evento.data).toLocaleString("pt-BR")}
             </span>
           </div>
         </div>

@@ -1,10 +1,7 @@
-// src/app/eventos/page.jsx (ou onde estiver seu EventosPage)
-
 "use client"
 import { useState, useEffect } from "react"
-import EventCard from "../components/EventCard"
 import NavMenu from "../components/NavMenu"
-import Footer from "../components/Footer"
+import EventCard from "../components/EventCard"
 
 const categoriasMock = [
   "Promoções",
@@ -41,18 +38,12 @@ export default function EventosPage() {
   function eventoTemCategoria(ev, cat) {
     if (!cat) return true
     const lower = cat.toLowerCase()
-    if (cat === "Promoções") {
-      return ev.destaque === true
-    }
-    if (cat === "Grátis") {
-      return ev.preco?.toLowerCase() === "grátis"
-    }
+    if (cat === "Promoções") return ev.destaque === true
+    if (cat === "Grátis") return ev.preco?.toLowerCase() === "grátis"
     if (!ev.categoria) return false
-
     const cats = Array.isArray(ev.categoria)
       ? ev.categoria
       : ev.categoria.split("—").map(c => c.trim())
-
     return cats.some(c => c.toLowerCase().includes(lower))
   }
 
@@ -95,9 +86,10 @@ export default function EventosPage() {
         <section className="mb-8 flex flex-wrap gap-3 justify-center">
           <button
             onClick={() => setCategoria("")}
-            className={`px-5 py-2 rounded-full font-semibold text-sm ${
-              !categoria ? "bg-[#E11D48]" : "bg-[#1F2937] border border-[#334155]"
-            } text-white hover:bg-[#F43F5E] transition`}
+            className={`px-5 py-2 rounded-full font-semibold text-sm ${!categoria
+                ? "bg-[#E11D48]"
+                : "bg-[#1F2937] border border-[#334155]"
+              } text-white hover:bg-[#F43F5E] transition`}
           >
             Todos
           </button>
@@ -105,11 +97,10 @@ export default function EventosPage() {
             <button
               key={cat}
               onClick={() => setCategoria(cat)}
-              className={`px-5 py-2 rounded-full font-semibold text-sm ${
-                categoria === cat
+              className={`px-5 py-2 rounded-full font-semibold text-sm ${categoria === cat
                   ? "bg-[#E11D48]"
                   : "bg-[#1F2937] border border-[#334155]"
-              } text-white hover:bg-[#F43F5E] transition`}
+                } text-white hover:bg-[#F43F5E] transition`}
             >
               {cat}
             </button>
@@ -118,26 +109,26 @@ export default function EventosPage() {
 
         {/* Lista de eventos */}
         {eventosFiltrados.length === 0 ? (
-          <p className="text-center text-gray-400 mt-20">Nenhum evento encontrado.</p>
+          <p className="text-center text-gray-400 mt-20">
+            Nenhum evento encontrado.
+          </p>
         ) : (
           <div className="grid gap-5 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
             {eventosFiltrados.map(ev => (
               <EventCard
                 key={ev.id}
                 evento={ev}
-                onFavoritar={id =>
-                  setFavoritos(favs =>
-                    favs.includes(id)
-                      ? favs.filter(fid => fid !== id)
-                      : [...favs, id]
+                favorito={favoritos.includes(ev.id)}    // <- aqui
+                onFavoritar={id => {
+                  setFavoritos(prev =>
+                    prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
                   )
-                }
+                }}
               />
             ))}
           </div>
         )}
       </div>
-      <Footer/>
     </div>
-)
+  )
 }

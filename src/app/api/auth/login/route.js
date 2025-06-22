@@ -8,8 +8,8 @@ export async function POST(request) {
   try {
     const { nome, senha } = await request.json()
 
-    if (!email || !senha) {
-      return Response.json({ erro: "Preencha email e senha" }, { status: 400 })
+    if (!nome || !senha) {
+      return Response.json({ erro: "Preencha nome e senha" }, { status: 400 })
     }
 
     const user = await prisma.usuario.findUnique({ where: { nome } })
@@ -40,6 +40,7 @@ export async function POST(request) {
       nome: user.nome,
       email: user.email,
     }, { status: 200 })
+
   } catch (error) {
     console.error("Erro no login:", error)
     return Response.json({ erro: "Erro interno do servidor" }, { status: 500 })

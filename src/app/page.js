@@ -10,7 +10,7 @@ export default function Home() {
       <main className="min-h-screen flex flex-col justify-center items-center bg-[#111827] px-4 py-16 font-sans text-white">
         {/* Logo e título */}
         <div className="flex items-center space-x-4 mb-6">
-          <Image src={Logo} alt="Logo Rolezito" width={70} height={70} />
+          <Image src={Logo} alt="Logo Rolezito" width={100} height={70} />
           <h1 className="text-5xl md:text-6xl font-extrabold text-[#E11D48] tracking-tight">
             Rolezito
           </h1>

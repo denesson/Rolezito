@@ -44,17 +44,17 @@ export default function GerenciarUsuarios() {
   return (
     <>
       <NavMenu />
-      <div className="max-w-4xl mx-auto py-12 px-6 bg-[#fff8e1] border border-[#e0c38b] rounded-xl shadow-md">
-        <h1 className="text-3xl font-bold mb-6 text-[#7b3f00] text-center">Gerenciar Usuários</h1>
+      <main className="min-h-screen bg-[#0f172a] text-white px-4 py-12 flex flex-col items-center justify-start">
+        <h1 className="text-3xl md:text-4xl font-bold mb-8 text-red-500 text-center">Gerenciar Usuários</h1>
 
-        {erro && <div className="text-red-600 font-semibold mb-4 text-center">{erro}</div>}
+        {erro && <div className="text-red-400 font-semibold mb-4 text-center">{erro}</div>}
 
-        {loading ? (
-          <div className="text-[#5c3b00] text-center">Carregando usuários...</div>
-        ) : (
-          <div className="overflow-x-auto rounded-xl shadow-sm">
-            <table className="w-full border-collapse bg-white rounded-xl overflow-hidden">
-              <thead className="bg-[#faeecf] text-[#5c3b00] font-semibold">
+        <div className="w-full max-w-5xl overflow-x-auto rounded-xl shadow-sm">
+          {loading ? (
+            <div className="text-gray-400 text-center">Carregando usuários...</div>
+          ) : (
+            <table className="w-full border-collapse bg-[#1e293b] rounded-xl overflow-hidden">
+              <thead className="bg-[#334155] text-white font-semibold">
                 <tr>
                   <th className="py-3 px-4 text-left">Nome</th>
                   <th className="py-3 px-4 text-left">Email</th>
@@ -64,18 +64,18 @@ export default function GerenciarUsuarios() {
               </thead>
               <tbody>
                 {usuarios.map((u) => (
-                  <tr key={u.id} className="border-t border-[#f0e5c4] hover:bg-[#fffdf6] transition">
-                    <td className="py-3 px-4 text-[#4b2c00] font-medium">{u.nome}</td>
-                    <td className="py-3 px-4 text-[#4b2c00]">{u.email}</td>
-                    <td className="py-3 px-4 text-center text-[#4b2c00]">
+                  <tr key={u.id} className="border-t border-[#475569] hover:bg-[#1e293b] transition">
+                    <td className="py-3 px-4 text-white font-medium">{u.nome}</td>
+                    <td className="py-3 px-4 text-gray-300">{u.email}</td>
+                    <td className="py-3 px-4 text-center text-gray-300">
                       {u.admin ? "Admin" : "Comum"}
                     </td>
                     <td className="py-3 px-4 text-center">
                       <button
                         className={`px-4 py-2 rounded-full font-semibold text-sm shadow-sm transition ${
                           u.admin
-                            ? "bg-[#c0392b] hover:bg-[#a93226]"
-                            : "bg-[#2e7d32] hover:bg-[#1b5e20]"
+                            ? "bg-red-600 hover:bg-red-700"
+                            : "bg-green-600 hover:bg-green-700"
                         } text-white`}
                         onClick={() => toggleAdmin(u.id, u.admin)}
                       >
@@ -86,9 +86,9 @@ export default function GerenciarUsuarios() {
                 ))}
               </tbody>
             </table>
-          </div>
-        )}
-      </div>
+          )}
+        </div>
+      </main>
     </>
   )
 }

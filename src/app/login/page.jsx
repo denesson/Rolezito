@@ -33,9 +33,9 @@ export default function LoginPage() {
   }
 
   return (
-    <>
+    <div className="flex flex-col min-h-screen bg-[#111827]">
       <NavMenu />
-      <main className="min-h-screen flex items-center justify-center bg-[#111827] px-4">
+      <main className="flex-grow flex items-center justify-center px-4">
         <div className="max-w-md w-full bg-[#1F2937] border border-[#334155] rounded-xl shadow p-6 space-y-6 text-white">
           <h1 className="text-3xl font-bold text-center text-[#E11D48]">Login Admin</h1>
 
@@ -69,7 +69,7 @@ export default function LoginPage() {
 
           <div className="text-sm text-center space-y-1 text-[#9CA3AF]">
             <p>
-              Não tem conta?{" "}
+              Não tem conta?{' '}
               <a href="/cadastro" className="underline text-[#0EA5E9] hover:text-[#38BDF8]">Cadastre-se</a>
             </p>
             <p>
@@ -79,8 +79,8 @@ export default function LoginPage() {
             </p>
           </div>
         </div>
-        <Footer />
       </main>
-    </>
+      <Footer />
+    </div>
   )
 }

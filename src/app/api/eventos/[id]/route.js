@@ -1,40 +1,70 @@
+// src/app/api/eventos/[id]/route.js
 import { NextResponse } from "next/server"
-import { PrismaClient } from "@prisma/client"
-const prisma = new PrismaClient()
+import prisma  from "../../../../../lib/prisma"   // assume que seu prisma.js faz export default
+                         
+/**
+ * GET /api/eventos/:id
+ * Retorna os dados de um evento pelo id.
+ */
+export async function GET(req, { params }) {
+  const id = parseInt(params.id, 10)
+  try {
+    const evento = await prisma.evento.findUnique({ where: { id } })
+    if (!evento) {
+      return NextResponse.json({ erro: "Evento não encontrado" }, { status: 404 })
+    }
+    return NextResponse.json(evento)
+  } catch (err) {
+    console.error("Erro ao buscar evento:", err)
+    return NextResponse.json({ erro: "Erro interno" }, { status: 500 })
+  }
+}
 
-// PUT: Atualizar evento
-export async function PUT(request, { params }) {
-  const id = Number(params.id)
-  const data = await request.json()
+/**
+ * PUT /api/eventos/:id
+ * Atualiza os dados de um evento.
+ */
+export async function PUT(req, { params }) {
+  const id = parseInt(params.id, 10)
+  const data = await req.json()
+
   try {
     const eventoAtualizado = await prisma.evento.update({
       where: { id },
       data: {
-        nome: data.nome,
-        data: new Date(data.data),
-        local: data.local,
+        nome:      data.nome,
+        data:      new Date(data.data),
+        local:     data.local,
         descricao: data.descricao,
-        preco: data.preco,
+        preco:     data.preco,
         categoria: data.categoria,
-        imagem: data.imagem || "",
-        destaque: data.destaque || false,
+        imagem:    data.imagem ?? "",
+        destaque:  data.destaque ?? false,
       },
     })
     return NextResponse.json(eventoAtualizado)
   } catch (err) {
-    return NextResponse.json({ erro: "Erro ao atualizar evento" }, { status: 500 })
+    console.error("Erro ao atualizar evento:", err)
+    const status = err.code === "P2025" ? 404 : 500
+    const msg    = err.code === "P2025" ? "Evento não encontrado" : "Erro ao atualizar evento"
+    return NextResponse.json({ erro: msg }, { status })
   }
 }
 
-// DELETE: Excluir evento
-export async function DELETE(request, { params }) {
-  const id = Number(params.id);
+/**
+ * DELETE /api/eventos/:id
+ * Remove um evento pelo id.
+ */
+export async function DELETE(req, { params }) {
+  const id = parseInt(params.id, 10)
   try {
-    await prisma.evento.delete({ where: { id } });
-    // status 204 não pode ter body!
-    return new Response(null, { status: 204 });
+    await prisma.evento.delete({ where: { id } })
+    // 204 No Content (sem body)
+    return new Response(null, { status: 204 })
   } catch (err) {
-    console.error("Erro ao excluir evento:", err);
-    return NextResponse.json({ erro: "Erro ao excluir evento" }, { status: 500 });
+    console.error("Erro ao excluir evento:", err)
+    const status = err.code === "P2025" ? 404 : 500
+    const msg    = err.code === "P2025" ? "Evento não encontrado" : "Erro ao excluir evento"
+    return NextResponse.json({ erro: msg }, { status })
   }
 }

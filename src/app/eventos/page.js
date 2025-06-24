@@ -1,3 +1,4 @@
+// src/app/eventos/page.jsx
 "use client"
 import { useState, useEffect } from "react"
 import NavMenu from "../components/NavMenu"
@@ -11,6 +12,7 @@ const categoriasMock = [
   "Balada",
   "Gastronomia",
   "Festival",
+  "Favoritos",
 ]
 
 export default function EventosPage() {
@@ -18,25 +20,70 @@ export default function EventosPage() {
   const [categoria, setCategoria] = useState("")
   const [dataBusca, setDataBusca] = useState("")
   const [eventos, setEventos] = useState([])
-  const [favoritos, setFavoritos] = useState([])
+  const [favoritos, setFavoritos] = useState(new Set())
 
   useEffect(() => {
-    async function fetchEventos() {
-      try {
-        const resp = await fetch("/api/eventos")
-        if (resp.ok) {
-          const lista = await resp.json()
-          setEventos(lista)
-        }
-      } catch {
-        setEventos([])
-      }
-    }
     fetchEventos()
+    fetchFavoritos()
   }, [])
+
+  async function fetchEventos() {
+    try {
+      const resp = await fetch("/api/eventos")
+      if (resp.ok) {
+        setEventos(await resp.json())
+      }
+    } catch (error) {
+      console.error("Erro ao buscar eventos:", error)
+      setEventos([])
+    }
+  }
+
+  async function fetchFavoritos() {
+    try {
+      const resp = await fetch("/api/favoritos", { credentials: "include" })
+      if (resp.ok) {
+        const data = await resp.json()
+        setFavoritos(new Set(data.map(f => f.eventId)))
+      } else {
+        console.error("Falha ao buscar favoritos:", resp.status)
+      }
+    } catch (error) {
+      console.error("Erro ao buscar favoritos:", error)
+    }
+  }
+
+  async function handleFavoritar(eventId) {
+    try {
+      const isFav = favoritos.has(eventId)
+      const method = isFav ? "DELETE" : "POST"
+      const resp = await fetch("/api/favoritos", {
+        method,
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ eventId }),
+      })
+      if (resp.ok) {
+        setFavoritos(prev => {
+          const copy = new Set(prev)
+          isFav ? copy.delete(eventId) : copy.add(eventId)
+          return copy
+        })
+      } else {
+        console.error("Erro ao atualizar favorito:", resp.status)
+        alert("Erro ao atualizar favorito.")
+      }
+    } catch (error) {
+      console.error("Erro de rede ao favoritar:", error)
+      alert("Erro de rede ao favoritar.")
+    }
+  }
 
   function eventoTemCategoria(ev, cat) {
     if (!cat) return true
+    if (cat === "Favoritos") {
+      return favoritos.has(ev.id)
+    }
     const lower = cat.toLowerCase()
     if (cat === "Promoções") return ev.destaque === true
     if (cat === "Grátis") return ev.preco?.toLowerCase() === "grátis"
@@ -59,7 +106,6 @@ export default function EventosPage() {
   return (
     <div className="bg-[#111827] text-white min-h-screen">
       <NavMenu />
-
       <div className="max-w-7xl mx-auto px-4 py-8">
         <h1 className="text-4xl sm:text-5xl font-extrabold mb-6 text-center text-[#E11D48]">
           Agenda de Eventos
@@ -118,12 +164,8 @@ export default function EventosPage() {
               <EventCard
                 key={ev.id}
                 evento={ev}
-                favorito={favoritos.includes(ev.id)}    // <- aqui
-                onFavoritar={id => {
-                  setFavoritos(prev =>
-                    prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
-                  )
-                }}
+                favorito={favoritos.has(ev.id)}
+                onFavoritar={() => handleFavoritar(ev.id)}
               />
             ))}
           </div>

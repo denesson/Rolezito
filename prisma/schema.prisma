@@ -1,3 +1,4 @@
+// ========== schema.prisma ==========
 generator client {
   provider = "prisma-client-js"
 }
@@ -8,23 +9,51 @@ datasource db {
 }
 
 model Evento {
-  id        Int      @id @default(autoincrement())
+  id        Int       @id @default(autoincrement())
   nome      String
   data      DateTime
   local     String
   descricao String
   preco     String
   categoria String
-  imagem    String?       // 👈 (opcional, mas útil!)
-  criadoEm  DateTime @default(now())
-  destaque  Boolean? @default(false)
+  imagem    String?
+  criadoEm  DateTime  @default(now())
+  destaque  Boolean   @default(false)
+
+  // back‐relation para Reviews
+  favoritos Favorito[]
+  reviews   Review[]
 }
 
 model Usuario {
-  id      Int     @id @default(autoincrement())
-  email   String  @unique
-  senha   String
-  nome    String
-  admin   Boolean @default(false)
-  criadoEm DateTime @default(now())
+  id       Int       @id @default(autoincrement())
+  email    String    @unique
+  senha    String
+  nome     String
+  admin    Boolean   @default(false)
+  criadoEm DateTime  @default(now())
+
+  // back‐relation para Reviews
+  favoritos Favorito[]
+  reviews   Review[]
+}
+
+model Favorito {
+  id        Int      @id @default(autoincrement())
+  user      Usuario  @relation(fields: [userId], references: [id])
+  userId    Int
+  evento    Evento   @relation(fields: [eventId], references: [id])
+  eventId   Int
+  criadoEm  DateTime @default(now())
+}
+
+model Review {
+  id         Int      @id @default(autoincrement())
+  comentario String
+  rating     Int      // 1 a 5
+  user       Usuario  @relation(fields: [userId], references: [id])
+  userId     Int
+  evento     Evento   @relation(fields: [eventId], references: [id])
+  eventId    Int
+  criadoEm   DateTime @default(now())
 }

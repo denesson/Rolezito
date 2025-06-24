@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import { useParams } from "next/navigation"
 import Link from "next/link"
 import NavMenu from "../../../app/components/NavMenu"
+import Footer from "../../../app/components/Footer"
 import FavoriteButton from "../../../app/components/FavoriteButton"
 import { Star } from "lucide-react"
 
@@ -21,17 +22,17 @@ export default function EventoDetalhe() {
     async function fetchData() {
       setLoading(true)
       try {
-        // Busca detalhes do evento
+        // Detalhes do evento
         const evtRes = await fetch(`/api/eventos/${id}`)
         if (evtRes.ok) setEvento(await evtRes.json())
-        // Busca status de favorito
+        // Estado de favorito
         const favRes = await fetch("/api/favoritos", { credentials: "include" })
         if (favRes.ok) {
           const favs = await favRes.json()
           setFavorito(favs.some(f => f.eventId === parseInt(id)))
         }
-        // Busca reviews
-        const revRes = await fetch(`/api/eventos/${id}/reviews`)
+        // Reviews
+        const revRes = await fetch(`/api/eventos/${id}/reviews`, { credentials: "include" })
         if (revRes.ok) setReviews(await revRes.json())
       } catch (err) {
         console.error(err)
@@ -69,9 +70,11 @@ export default function EventoDetalhe() {
       })
       if (res.ok) {
         const newRev = await res.json()
-        setReviews(r => [newRev, ...r])
+        setReviews(prev => [newRev, ...prev])
         setComentario("")
         setRating(0)
+      } else {
+        console.error('Erro ao enviar review', res.status)
       }
     } catch (err) {
       console.error(err)
@@ -81,16 +84,27 @@ export default function EventoDetalhe() {
   }
 
   if (loading) {
-    return <div className="min-h-screen bg-[#111827] text-center text-white py-20">Carregando...</div>
+    return (
+      <div className="min-h-screen bg-[#111827] text-center text-white py-20">
+        Carregando...
+      </div>
+    )
   }
+
   if (!evento) {
-    return <div className="min-h-screen bg-[#111827] text-center text-red-400 py-20">Evento não encontrado.</div>
+    return (
+      <div className="min-h-screen bg-[#111827] text-center text-red-400 py-20">
+        Evento não encontrado.
+      </div>
+    )
   }
 
   return (
-    <>
+    <div className="bg-[#111827] text-white min-h-screen">
       <NavMenu />
-      <main className="bg-[#111827] text-white min-h-screen px-4 py-10 max-w-2xl mx-auto space-y-6">
+      <div className="flex items-center justify-center bg-[#111827] py-10">
+      <main className="bg-[#1F2937] text-white px-4 py-10 max-w-2xl w-full rounded-2xl space-y-6">
+
         <Link href="/eventos" className="text-sm text-[#E11D48] hover:underline">
           ← Voltar
         </Link>
@@ -140,6 +154,7 @@ export default function EventoDetalhe() {
           ) : (
             reviews.map(r => (
               <div key={r.id} className="bg-[#1F2937] p-4 rounded-lg">
+                <p className="text-sm font-semibold text-white mb-1">{r.user?.nome}</p>
                 <div className="flex gap-1 mb-2">
                   {[1,2,3,4,5].map(i => (
                     <Star
@@ -157,6 +172,8 @@ export default function EventoDetalhe() {
           )}
         </section>
       </main>
-    </>
+      </div>
+      <Footer />
+    </div>
   )
 }

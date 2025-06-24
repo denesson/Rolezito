@@ -15,7 +15,7 @@ export default function NavMenu() {
   const links = [
     { href: "/", label: "Home" },
     { href: "/eventos", label: "Eventos" },
-    { href: "/ofertas", label: "Ofertas" },
+    { href: "/ofertas", label: "Promoções" },
     { href: "/ranking", label: "Ranking" },
     { href: "/sobre", label: "Sobre" },
     { href: "/contato", label: "Contato" },
@@ -199,7 +199,6 @@ export default function NavMenu() {
             )}
 
             <div className="pt-4 border-t border-gray-700">
-              <ThemeToggle />
             </div>
           </div>
           <style jsx>{`

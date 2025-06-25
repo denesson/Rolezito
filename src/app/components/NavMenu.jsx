@@ -121,9 +121,6 @@ export default function NavMenu() {
             </li>
           )}
 
-          <li>
-            <ThemeToggle />
-          </li>
         </ul>
 
         {/* mobile toggle */}
@@ -206,7 +203,6 @@ export default function NavMenu() {
             )}
 
             <div className="pt-4 border-t border-gray-700"></div>
-            <ThemeToggle />
           </div>
           <style jsx>{`
             .animate-slide-in {

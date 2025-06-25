@@ -20,26 +20,26 @@ export default function AdminPanel() {
   const router = useRouter()
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const userStr = localStorage.getItem("user")
-      if (!userStr) {
-        router.push("/login")
-        return
-      }
-
-      const user = JSON.parse(userStr)
-      if (!user.admin) {
-        router.push("/login")
-      }
+  if (typeof window !== "undefined") {
+    const userStr = localStorage.getItem("user")
+    if (!userStr) {
+      router.push("/login")
+      return
     }
-  }, [])
+
+    const user = JSON.parse(userStr)
+    if (!user.admin) {
+      router.push("/login")
+    }
+  }
+}, [])
 
   useEffect(() => {
     fetchEventos()
   }, [])
 
   async function fetchEventos() {
-    const resp = await fetch("/api/eventos")
+    const resp = await fetch("/api/admin")
     if (resp.ok) {
       const lista = await resp.json()
       setEventos(lista)
@@ -81,7 +81,7 @@ export default function AdminPanel() {
       destaque: form.destaque,
     }
 
-    const url = editId !== null ? `/api/eventos/${editId}` : "/api/eventos"
+    const url = editId !== null ? `/api/admin/${editId}` : "/api/admin"
     const method = editId !== null ? "PUT" : "POST"
 
     try {
@@ -119,7 +119,7 @@ export default function AdminPanel() {
   async function handleExcluir(id) {
     if (confirm("Quer mesmo excluir esse evento?")) {
       try {
-        const resp = await fetch(`/api/eventos/${id}`, { method: "DELETE" })
+        const resp = await fetch(`/api/admin/${id}`, { method: "DELETE" })
         if (!resp.ok) {
           alert("Erro ao excluir evento")
           return

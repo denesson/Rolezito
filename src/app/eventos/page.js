@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import NavMenu from "../components/NavMenu"
 import EventCard from "../components/EventCard"
 import AdBanner from "../components/AdBanner"
+import SideBanner from "../components/SideBanner"
 import Footer from "../components/Footer"
 
 const categoriasMock = [
@@ -30,7 +31,6 @@ export default function EventosPage() {
   useEffect(() => {
     fetchEventos()
     fetchFavoritos()
-    // Exibe onboarding uma vez
     if (!localStorage.getItem("seenOnboarding")) {
       setShowOnboarding(true)
       localStorage.setItem("seenOnboarding", "1")
@@ -50,8 +50,7 @@ export default function EventosPage() {
     try {
       const resp = await fetch("/api/eventos")
       if (resp.ok) setEventos(await resp.json())
-    } catch (error) {
-      console.error("Erro ao buscar eventos:", error)
+    } catch {
       setEventos([])
     }
   }
@@ -63,8 +62,8 @@ export default function EventosPage() {
         const data = await resp.json()
         setFavoritos(new Set(data.map(f => f.eventId)))
       }
-    } catch (error) {
-      console.error("Erro ao buscar favoritos:", error)
+    } catch {
+      // falha silenciosa
     }
   }
 
@@ -85,8 +84,8 @@ export default function EventosPage() {
           return copy
         })
       }
-    } catch (error) {
-      console.error("Erro de rede ao favoritar:", error)
+    } catch {
+      // falha de rede
     }
   }
 
@@ -120,8 +119,8 @@ export default function EventosPage() {
       {/* Banner de patrocínio */}
       <AdBanner>
         <img
-          src="https://placehold.co/728x90/111827/E11D48?text=Patrocinador+Rolezito"
-          alt="Anúncio Exemplo"
+          src="https://placehold.co/728x90/transparent/000000?text=Banner+Exemplo"
+          alt="Banner Exemplo"
           className="block w-full h-auto"
         />
       </AdBanner>
@@ -142,12 +141,12 @@ export default function EventosPage() {
         </div>
       )}
 
-      <div className="flex-grow max-w-7xl mx-auto px-4 py-8">
+      <div className="max-w-7xl mx-auto px-4 py-8">
+        {/* Título e filtros fora do flex principal */}
         <h1 className="text-4xl sm:text-5xl font-extrabold mb-6 text-center text-[#E11D48]">
           Agenda de Eventos
         </h1>
 
-        {/* Busca e filtro de data */}
         <section className="mb-6 flex flex-col sm:flex-row gap-4 items-center justify-between">
           <input
             type="search"
@@ -164,7 +163,6 @@ export default function EventosPage() {
           />
         </section>
 
-        {/* Filtro de categorias */}
         <section className="mb-8 flex flex-wrap gap-3 justify-center">
           <button
             onClick={() => setCategoria("")}
@@ -189,23 +187,39 @@ export default function EventosPage() {
           ))}
         </section>
 
-        {/* Lista de eventos */}
-        {listaParaExibir.length === 0 ? (
-          <p className="text-center text-gray-400 mt-20">
-            Nenhum evento {categoria === 'Recomendados' ? 'recomendado' : 'encontrado'}.
-          </p>
-        ) : (
-          <div className="grid gap-5 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-            {listaParaExibir.map(ev => (
-              <EventCard
-                key={ev.id}
-                evento={ev}
-                favorito={favoritos.has(ev.id)}
-                onFavoritar={() => handleFavoritar(ev.id)}
-              />
-            ))}
+        {/* Grid + Sidebar flexível */}
+        <div className="flex flex-col lg:flex-row gap-8">
+          {/* Conteúdo principal */}
+          <div className="flex-1">
+            {listaParaExibir.length === 0 ? (
+              <p className="text-center text-gray-400 mt-20">
+                Nenhum evento {categoria === 'Recomendados' ? 'recomendado' : 'encontrado'}.
+              </p>
+            ) : (
+              <div className="grid gap-5 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+                {listaParaExibir.map(ev => (
+                  <EventCard
+                    key={ev.id}
+                    evento={ev}
+                    favorito={favoritos.has(ev.id)}
+                    onFavoritar={() => handleFavoritar(ev.id)}
+                  />
+                ))}
+              </div>
+            )}
           </div>
-        )}
+
+          {/* Sidebar só desktop */}
+          <div className="hidden lg:block">
+            <SideBanner>
+              <img
+                src="https://placehold.co/300x250/transparent/000000?text=Anúncio+Exemplo"
+                alt="Patrocinador"
+                className="block w-full h-auto"
+              />
+            </SideBanner>
+          </div>
+        </div>
       </div>
 
       <Footer />

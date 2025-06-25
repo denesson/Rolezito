@@ -3,9 +3,9 @@
 import { useState, useEffect } from "react"
 import { useParams } from "next/navigation"
 import Link from "next/link"
-import NavMenu from "../../../components/NavMenu"
-import Footer from "../../../components/Footer"
-import FavoriteButton from "../../../components/FavoriteButton"
+import NavMenu        from '../../components/NavMenu'
+import Footer         from '../../components/Footer'
+import FavoriteButton from '../../components/FavoriteButton'
 import { Star } from "lucide-react"
 
 export default function EventoDetalhe() {

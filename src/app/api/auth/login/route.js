@@ -1,6 +1,6 @@
 // src/app/api/auth/login/route.js
 import { NextResponse } from 'next/server'
-import prisma from '../../../../lib/prisma'    // 4 níveis para chegar em src/lib/prisma.js
+import prisma from '../../../../../lib/prisma'    // 4 níveis para chegar em src/lib/prisma.js
 import bcrypt from 'bcryptjs'
 import jwt    from 'jsonwebtoken'
 

@@ -1,50 +1,62 @@
 // src/hooks/useAuth.js
 "use client"
 import { useState, useEffect, createContext, useContext } from "react"
+import { useRouter } from "next/navigation"
 
-const AuthContext = createContext({
-  user: null,
-  login: () => Promise.resolve(),
-  logout: () => {}
-})
+const AuthContext = createContext({ user: null, login: async () => {}, logout: () => {} })
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null)
+  const router = useRouter()
 
-  // 1) Ao montar, pergunta ao servidor “quem sou eu?”
+  // 1) ao montar, pergunta ao servidor quem está logado
   useEffect(() => {
-    fetch("/api/auth/me", { credentials: "include" })
-      .then(res => res.json())
-      .then(data => {
-        if (data.user) {
-          setUser(data.user)
-          localStorage.setItem("user", JSON.stringify(data.user))
-        }
-      })
+    async function loadUser() {
+      try {
+        const res = await fetch("/api/auth/me", { credentials: "include" })
+        const data = await res.json()
+        setUser(data.user)
+      } catch (err) {
+        console.error("Erro ao buscar usuário:", err)
+        setUser(null)
+      }
+    }
+    loadUser()
   }, [])
 
-  // 2) login: além de setar no state/localStorage,
-  //    manda um POST pra /api/auth/login e aguarda o cookie
+  // 2) login chama /api/auth/login e grava o usuário
   async function login({ nome, senha }) {
-    const res = await fetch("/api/auth/login", {
-      method: "POST",
-      credentials: "include",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ nome, senha })
-    })
-    const data = await res.json()
-    if (!res.ok) throw new Error(data.erro || "Falha no login")
-    setUser(data)           // data = { nome, email, admin }
-    localStorage.setItem("user", JSON.stringify(data))
-    return data
+    try {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ nome, senha }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.erro || "Falha no login")
+      setUser(data)
+      return data
+    } catch (err) {
+      console.error("Login falhou:", err)
+      throw err
+    }
   }
 
-  // 3) logout limpa tudo
-  function logout() {
-    // opcional: chamar /api/auth/logout para zerar cookie no servidor
-    localStorage.removeItem("user")
-    setUser(null)
-    window.location.href = "/login"
+  // 3) logout limpa o cookie via endpoint e faz hard reload para login
+  async function logout() {
+    try {
+      await fetch("/api/auth/logout", {
+        method: "POST",
+        credentials: "include",
+      })
+    } catch (err) {
+      console.error("Logout falhou:", err)
+    } finally {
+      setUser(null)
+      // Hard reload para garantir remoção completa do cookie e SSR revalidado
+      window.location.href = "/login"
+    }
   }
 
   return (

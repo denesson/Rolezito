@@ -1,11 +1,11 @@
 // src/app/Providers.jsx
-'use client'
-import { ThemeProvider } from 'next-themes'
+"use client"
+import { AuthProvider } from "../hooks/useAuth"
 
 export function Providers({ children }) {
   return (
-    <ThemeProvider attribute="class" enableSystem defaultTheme="system">
+    <AuthProvider>
       {children}
-    </ThemeProvider>
+    </AuthProvider>
   )
 }

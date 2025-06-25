@@ -1,4 +1,4 @@
-// components/NavMenu.jsx
+// src/app/components/NavMenu.jsx
 "use client"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
@@ -21,16 +21,22 @@ export default function NavMenu() {
     { href: "/contato", label: "Contato" },
   ]
 
-  const isActive = (href) => pathname === href
-
   const adminLinks = [
     { href: "/admin", label: "Gerenciar Eventos" },
     { href: "/admin/usuarios", label: "Gerenciar Usuários" },
   ]
 
-  function handleLoginClick() {
+  const isActive = (href) => pathname === href
+
+  const handleLoginClick = () => {
     setOpen(false)
     router.push("/login")
+  }
+
+  const handleLogoutClick = async () => {
+    await logout()
+    setOpen(false)
+    // AuthProvider's logout already redirects to /login
   }
 
   return (
@@ -92,12 +98,12 @@ export default function NavMenu() {
             <>
               <li>
                 <span className="px-4 py-2 text-white font-semibold">
-                  {user.nome}
+                  Olá, {user.nome}
                 </span>
               </li>
               <li>
                 <button
-                  onClick={() => { logout(); window.location.reload() }}
+                  onClick={handleLogoutClick}
                   className="px-4 py-2 rounded-full bg-red-600 text-white font-bold hover:bg-red-700"
                 >
                   Sair
@@ -116,6 +122,7 @@ export default function NavMenu() {
           )}
 
           <li>
+            <ThemeToggle />
           </li>
         </ul>
 
@@ -164,7 +171,7 @@ export default function NavMenu() {
                     key={href}
                     href={href}
                     onClick={() => setOpen(false)}
-                    className={`block px-4 py-2 rounded-full font-semibold transition ${
+                    className={`block px-4 py-2 font-semibold rounded-full transition ${
                       isActive(href)
                         ? "bg-[#E11D48] text-white"
                         : "text-white hover:bg-[#F43F5E]"
@@ -180,10 +187,10 @@ export default function NavMenu() {
             {user ? (
               <>
                 <span className="block text-white font-semibold mb-2">
-                  {user.nome}
+                  Olá, {user.nome}
                 </span>
                 <button
-                  onClick={() => { logout(); setOpen(false); window.location.reload() }}
+                  onClick={handleLogoutClick}
                   className="w-full px-4 py-2 rounded-full bg-red-600 text-white font-bold hover:bg-red-700"
                 >
                   Sair
@@ -198,8 +205,8 @@ export default function NavMenu() {
               </button>
             )}
 
-            <div className="pt-4 border-t border-gray-700">
-            </div>
+            <div className="pt-4 border-t border-gray-700"></div>
+            <ThemeToggle />
           </div>
           <style jsx>{`
             .animate-slide-in {
@@ -218,6 +225,6 @@ export default function NavMenu() {
           `}</style>
         </div>
       )}
-    </nav>
-  )
-}
+        </nav>
+      );
+    }

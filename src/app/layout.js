@@ -1,9 +1,11 @@
 // src/app/layout.jsx
-+ "use client"
 import "./styles/globals.css"
 import { Geist, Geist_Mono } from "next/font/google"
 import { Providers } from "./Providers"
+import NavMenu from "./components/NavMenu"
+import Footer  from "./components/Footer"
 
+// Definições de fonte do Next Font (podem ser usadas em client ou server)
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] })
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] })
 

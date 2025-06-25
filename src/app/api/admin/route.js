@@ -1,55 +1,36 @@
 // src/app/api/admin/route.js
+import { PrismaClient } from "@prisma/client"
 import { NextResponse } from "next/server"
 
-let eventos = [
-  {
-    id: 1,
-    nome: "Pagode da Praça",
-    data: "2025-06-28T21:00:00",
-    local: "Praça Central",
-    preco: "Grátis",
-    descricao: "A melhor roda de samba da cidade.",
-    imagem: "",
-    categoria: "Música",
-    destaque: false,
-  }
-]
+// evita múltiplas instâncias no dev
+const prisma = global.prisma || new PrismaClient()
+if (process.env.NODE_ENV !== "production") global.prisma = prisma
 
-// GET: lista todos os eventos
+/** GET /api/admin — lista todos os eventos */
 export async function GET() {
+  const eventos = await prisma.evento.findMany({
+    orderBy: { data: "asc" }
+  })
   return NextResponse.json(eventos)
 }
 
-// POST: cria novo evento
+/** POST /api/admin — cria um novo evento */
 export async function POST(req) {
-  const body = await req.json()
-  const id = eventos.length ? Math.max(...eventos.map(ev => ev.id)) + 1 : 1
-  const novoEvento = { id, ...body }
-  eventos.push(novoEvento)
-  return NextResponse.json(novoEvento)
-}
+  const { nome, data, local, descricao, preco, categoria, imagem, destaque } =
+    await req.json()
 
-// PUT: edita evento (chamado em /api/admin/{id})
-export async function PUT(req) {
-  const url = new URL(req.url)
-  const id = parseInt(url.pathname.split('/').pop(), 10)
-  const body = await req.json()
-  const idx = eventos.findIndex(ev => ev.id === id)
-  if (idx === -1) {
-    return NextResponse.json({ error: "Evento não encontrado" }, { status: 404 })
-  }
-  eventos[idx] = { ...eventos[idx], ...body }
-  return NextResponse.json(eventos[idx])
-}
+  const novo = await prisma.evento.create({
+    data: {
+      nome,
+      data: data ? new Date(data) : new Date(),
+      local,
+      descricao,
+      preco,
+      categoria,
+      imagem: imagem || "",
+      destaque: destaque ?? false,
+    },
+  })
 
-// DELETE: remove evento (chamado em /api/admin/{id})
-export async function DELETE(req) {
-  const url = new URL(req.url)
-  const id = parseInt(url.pathname.split('/').pop(), 10)
-  const idx = eventos.findIndex(ev => ev.id === id)
-  if (idx === -1) {
-    return NextResponse.json({ error: "Evento não encontrado" }, { status: 404 })
-  }
-  eventos.splice(idx, 1)
-  return NextResponse.json({ ok: true })
+  return NextResponse.json(novo, { status: 201 })
 }

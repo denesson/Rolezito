@@ -1,12 +1,38 @@
 "use client"
 import { useEffect, useState } from "react"
+import { useRouter } from "next/navigation"
 import NavMenu from "../../components/NavMenu"
 
 export default function GerenciarUsuarios() {
+  const router = useRouter()
   const [usuarios, setUsuarios] = useState([])
   const [loading, setLoading] = useState(true)
   const [erro, setErro] = useState("")
 
+  // Proteção de rota: só permite acesso a admins
+  useEffect(() => {
+    if (typeof window === "undefined") return
+
+    const raw = localStorage.getItem("user")
+    if (!raw) {
+      router.push("/login")
+      return
+    }
+
+    let user
+    try {
+      user = JSON.parse(raw)
+    } catch {
+      router.push("/login")
+      return
+    }
+
+    if (!user.admin) {
+      router.push("/login")
+    }
+  }, [router])
+
+  // Carrega lista de usuários
   useEffect(() => {
     fetchUsuarios()
   }, [])

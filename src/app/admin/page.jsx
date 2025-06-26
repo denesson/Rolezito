@@ -2,292 +2,220 @@
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import NavMenu from "../components/NavMenu"
+import { ToastContainer, toast } from 'react-toastify'
+import 'react-toastify/dist/ReactToastify.css'
+
+// Categorias fixas
+const CATEGORIAS = [
+  "Música",
+  "Bar",
+  "Gastronomia",
+  "Festival",
+  "Cultura",
+  "Grátis",
+]
 
 export default function AdminPanel() {
-  const [eventos, setEventos] = useState([])
-  const [form, setForm] = useState({
-    nome: "",
-    data: "",
-    local: "",
-    preco: "",
-    descricao: "",
-    imagem: "",
-    categoria: "",
-    destaque: false,
-  })
-  const [editId, setEditId] = useState(null)
   const router = useRouter()
+  const [eventos, setEventos] = useState([])
+  const [form, setForm] = useState({ nome:'', data:'', local:'', preco:'', descricao:'', imagem:'', categoria:'', destaque:false })
+  const [editId, setEditId] = useState(null)
+  const [loading, setLoading] = useState(false)
+  const [deleteId, setDeleteId] = useState(null)
+  const [showFormModal, setShowFormModal] = useState(false)
+  const [filterName, setFilterName] = useState("")
+  const [filterCategory, setFilterCategory] = useState("")
+  const [sortOrder, setSortOrder] = useState(null)
 
-  // Proteção de rota (cliente) usando role
+  // Guard de rota
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const userStr = localStorage.getItem("user")
-      if (!userStr) {
-        router.push("/login")
-        return
-      }
-      const user = JSON.parse(userStr)
-      if (user.role !== "produtor" && user.role !== "admin") {
-        router.push("/login")
-      }
-    }
+    if (typeof window === "undefined") return
+    const raw = localStorage.getItem("user")
+    if (!raw) return router.push("/login")
+    let user
+    try { user = JSON.parse(raw) } catch { return router.push("/login") }
+    if (!user.admin && user.role !== "produtor") return router.push("/login")
   }, [router])
 
-  // Carrega lista de eventos
-  useEffect(() => {
-    fetchEventos()
-  }, [])
-
+  // Fetch eventos
+  useEffect(() => { fetchEventos() }, [])
   async function fetchEventos() {
     try {
       const resp = await fetch("/api/admin")
-      if (!resp.ok) throw new Error("Falha ao buscar eventos")
-      const data = await resp.json()
-      setEventos(data)
-    } catch (err) {
-      console.error(err)
-      alert("Erro ao carregar eventos")
+      if (!resp.ok) throw new Error()
+      setEventos(await resp.json())
+    } catch {
+      toast.error("Erro ao carregar eventos")
     }
   }
 
+  // Upload de arquivo para imagem
+  async function handleFileSelect(e) {
+    const file = e.target.files[0]
+    if (!file) return
+    // Preview local imediato
+    const previewUrl = URL.createObjectURL(file)
+    setForm(f => ({ ...f, imagem: previewUrl }))
+    // Enviar para API
+    const formData = new FormData()
+    formData.append("file", file)
+    try {
+      const resp = await fetch('/api/upload', { method: 'POST', body: formData })
+      if (!resp.ok) throw new Error()
+      const { url } = await resp.json()
+      setForm(f => ({ ...f, imagem: url }))
+    } catch {
+      toast.error('Falha ao enviar a imagem')
+    }
+  }
+
+  // Form handlers
   function handleChange(e) {
     const { name, value, type, checked } = e.target
-    setForm(f => ({
-      ...f,
-      [name]: type === "checkbox" ? checked : value,
-    }))
+    setForm(f => ({ ...f, [name]: type === 'checkbox' ? checked : value }))
   }
-
   function resetForm() {
-    setForm({
-      nome: "",
-      data: "",
-      local: "",
-      preco: "",
-      descricao: "",
-      imagem: "",
-      categoria: "",
-      destaque: false,
-    })
+    setForm({ nome:'', data:'', local:'', preco:'', descricao:'', imagem:'', categoria:'', destaque:false })
     setEditId(null)
   }
-
-  async function handleSubmit(e) {
-    e.preventDefault()
-    const payload = {
-      nome: form.nome,
-      data: form.data
-        ? new Date(form.data).toISOString()
-        : new Date().toISOString(),
-      local: form.local,
-      descricao: form.descricao,
-      preco: form.preco,
-      categoria: form.categoria,
-      imagem: form.imagem,
-      destaque: form.destaque,
-    }
-
-    const url = editId !== null ? `/api/admin/${editId}` : "/api/admin"
-    const method = editId !== null ? "PUT" : "POST"
-
-    try {
-      const resp = await fetch(url, {
-        method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+  function openModal(isNew, id) {
+    if (isNew) {
+      resetForm()
+    } else if (id != null) {
+      const ev = eventos.find(e => e.id === id)
+      setForm({
+        nome: ev.nome,
+        data: ev.data ? new Date(ev.data).toISOString().slice(0,16) : '',
+        local: ev.local,
+        preco: ev.preco,
+        descricao: ev.descricao,
+        imagem: ev.imagem || '',
+        categoria: ev.categoria,
+        destaque: ev.destaque,
       })
-      if (!resp.ok) throw new Error("Erro ao salvar evento")
-      resetForm()
-      fetchEventos()
-    } catch (err) {
-      console.error(err)
-      alert(err.message || "Erro na conexão com a API")
+      setEditId(id)
     }
+    setShowFormModal(true)
   }
-
-  function handleEditar(id) {
-    const ev = eventos.find(e => e.id === id)
-    setForm({
-      nome: ev.nome,
-      data: ev.data
-        ? new Date(ev.data).toISOString().slice(0, 16)
-        : "",
-      local: ev.local,
-      preco: ev.preco,
-      descricao: ev.descricao,
-      imagem: ev.imagem || "",
-      categoria: ev.categoria,
-      destaque: ev.destaque,
-    })
-    setEditId(id)
-  }
-
-  async function handleExcluir(id) {
-    if (!confirm("Quer mesmo excluir esse evento?")) return
+  async function handleSubmit(e) {
+    e.preventDefault(); setLoading(true)
+    const payload = { ...form, data: form.data ? new Date(form.data).toISOString() : new Date().toISOString() }
+    const url = editId != null ? `/api/admin/${editId}` : '/api/admin'
+    const method = editId != null ? 'PUT' : 'POST'
     try {
-      const resp = await fetch(`/api/admin/${id}`, { method: "DELETE" })
-      if (!resp.ok) throw new Error("Erro ao excluir evento")
-      resetForm()
-      fetchEventos()
-    } catch (err) {
-      console.error(err)
-      alert(err.message || "Erro na conexão com a API")
-    }
+      const resp = await fetch(url, { method, headers: { 'Content-Type':'application/json' }, body: JSON.stringify(payload) })
+      if (!resp.ok) throw new Error()
+      toast.success(editId != null ? 'Evento atualizado' : 'Evento criado')
+      resetForm(); fetchEventos(); setShowFormModal(false)
+    } catch {
+      toast.error('Erro ao salvar evento')
+    } finally { setLoading(false) }
   }
+  async function handleExcluir(id) {
+    if (!window.confirm('Quer excluir este evento?')) return
+    setDeleteId(id)
+    try {
+      const resp = await fetch(`/api/admin/${id}`, { method: 'DELETE' })
+      if (!resp.ok) throw new Error()
+      toast.success('Evento excluído')
+      resetForm(); fetchEventos()
+    } catch {
+      toast.error('Erro ao excluir evento')
+    } finally { setDeleteId(null) }
+  }
+
+  // Filtrar e ordenar
+  const filtered = eventos.filter(ev =>
+    ev.nome.toLowerCase().includes(filterName.toLowerCase()) &&
+    (!filterCategory || ev.categoria === filterCategory)
+  )
+  const sorted = filtered.slice().sort((a, b) => {
+    if (!sortOrder) return 0
+    return sortOrder === 'asc'
+      ? new Date(a.data) - new Date(b.data)
+      : new Date(b.data) - new Date(a.data)
+  })
 
   return (
     <>
       <NavMenu />
-      <main className="min-h-screen bg-[#111827] text-white px-4 py-12 flex items-center justify-center">
-        <div className="w-full max-w-3xl bg-[#1e293b] border border-[#334155] rounded-xl shadow-md p-6">
-          <h1 className="text-3xl font-bold mb-6 text-center text-red-500">
-            Painel Admin — Gerenciar Eventos
-          </h1>
+      <ToastContainer position='top-right' autoClose={3000} hideProgressBar />
+      <main className="min-h-screen bg-[#111827] p-6 flex justify-center">
+        <div className="w-full max-w-3xl space-y-6">
+          <h1 className="text-3xl text-red-500 font-bold text-center">Painel Admin — Gerenciar Eventos</h1>
 
-          <form
-            onSubmit={handleSubmit}
-            className="mb-10 space-y-4 bg-[#0f172a] p-6 rounded-xl border border-[#334155] shadow-md"
-          >
-            <input
-              type="text"
-              name="nome"
-              placeholder="Nome do evento"
-              value={form.nome}
-              onChange={handleChange}
-              required
-              className="w-full p-3 border border-[#475569] rounded bg-[#1e293b] text-white placeholder-gray-400"
-            />
-            <input
-              type="datetime-local"
-              name="data"
-              value={form.data}
-              onChange={handleChange}
-              required
-              className="w-full p-3 border border-[#475569] rounded bg-[#1e293b] text-white placeholder-gray-400"
-            />
-            <input
-              type="text"
-              name="local"
-              placeholder="Local"
-              value={form.local}
-              onChange={handleChange}
-              required
-              className="w-full p-3 border border-[#475569] rounded bg-[#1e293b] text-white placeholder-gray-400"
-            />
-            <input
-              type="text"
-              name="preco"
-              placeholder="Preço (ex: Grátis, R$ 15)"
-              value={form.preco}
-              onChange={handleChange}
-              className="w-full p-3 border border-[#475569] rounded bg-[#1e293b] text-white placeholder-gray-400"
-            />
-            <input
-              type="text"
-              name="categoria"
-              placeholder="Categoria (ex: Música, Bar)"
-              value={form.categoria}
-              onChange={handleChange}
-              className="w-full p-3 border border-[#475569] rounded bg-[#1e293b] text-white placeholder-gray-400"
-            />
-            <input
-              type="url"
-              name="imagem"
-              placeholder="URL da imagem"
-              value={form.imagem}
-              onChange={handleChange}
-              className="w-full p-3 border border-[#475569] rounded bg-[#1e293b] text-white placeholder-gray-400"
-            />
-            <textarea
-              name="descricao"
-              placeholder="Descrição"
-              value={form.descricao}
-              onChange={handleChange}
-              rows={4}
-              className="w-full p-3 border border-[#475569] rounded bg-[#1e293b] text-white placeholder-gray-400"
-            />
-            <label className="flex items-center gap-2 font-medium text-white">
-              <input
-                type="checkbox"
-                name="destaque"
-                checked={form.destaque}
-                onChange={handleChange}
-                className="accent-red-500"
-              />
-              Evento em destaque / Promoção
-            </label>
+          {/* Botão de adicionar */}
+          <div className="flex justify-end">
+            <button onClick={() => openModal(true)} className="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded font-semibold">Adicionar Evento</button>
+          </div>
 
-            <div className="flex flex-wrap gap-4">
-              <button
-                type="submit"
-                className="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded font-semibold transition"
-              >
-                {editId !== null ? "Atualizar Evento" : "Adicionar Evento"}
-              </button>
-              {editId !== null && (
-                <button
-                  type="button"
-                  onClick={resetForm}
-                  className="px-6 py-2 rounded border border-gray-400 text-gray-300 hover:bg-gray-700 transition"
-                >
-                  Cancelar
-                </button>
-              )}
+          {/* Filtros & Ordenação */}
+          <div className="flex flex-wrap gap-4 items-center">
+            <input value={filterName} onChange={e => setFilterName(e.target.value)} placeholder="Buscar por nome..." className="flex-1 p-3 bg-[#1e293b] rounded border border-[#475569] text-white" />
+            <select value={filterCategory} onChange={e => setFilterCategory(e.target.value)} className="p-3 bg-[#1e293b] rounded border border-[#475569] text-white">
+              <option value="">Todas categorias</option>
+              {CATEGORIAS.map(cat => <option key={cat} value={cat}>{cat}</option>)}
+            </select>
+            <button onClick={() => { setFilterName(''); setFilterCategory('') }} className="px-4 py-2 bg-gray-600 hover:bg-gray-700 rounded text-white">Limpar</button>
+            <div className="ml-auto flex gap-2">
+              <button onClick={() => setSortOrder('asc')} className={`p-2 rounded ${sortOrder === 'asc' ? 'bg-blue-600' : 'bg-gray-600'} text-white`}>Data ↑</button>
+              <button onClick={() => setSortOrder('desc')} className={`p-2 rounded ${sortOrder === 'desc' ? 'bg-blue-600' : 'bg-gray-600'} text-white`}>Data ↓</button>
             </div>
-          </form>
+          </div>
 
-          <section>
-            <h2 className="text-xl font-semibold mb-4 text-red-400">
-              Eventos Cadastrados
-            </h2>
-            {eventos.length === 0 ? (
-              <p className="text-gray-400">Nenhum evento cadastrado.</p>
-            ) : (
-              <ul className="space-y-3">
-                {eventos.map(ev => (
-                  <li
-                    key={ev.id}
-                    className={`border rounded-xl p-4 flex justify-between items-center ${
-                      ev.destaque
-                        ? "border-yellow-500 bg-[#1e293b]"
-                        : "border-gray-600 bg-[#0f172a]"
-                    } shadow-sm`}
-                  >
-                    <div>
-                      <strong className="text-white">{ev.nome}</strong>
-                      <span className="ml-2 text-xs text-gray-400">
-                        {ev.data &&
-                          new Date(ev.data).toLocaleString("pt-BR")}
-                      </span>
-                      {ev.destaque && (
-                        <span className="ml-2 px-2 py-1 rounded bg-yellow-400 text-black text-xs font-bold">
-                          Promoção
-                        </span>
-                      )}
-                      <div className="text-sm text-gray-400">
-                        {ev.local} — {ev.categoria} — {ev.preco}
-                      </div>
-                    </div>
-                    <div className="flex gap-3 text-sm">
-                      <button
-                        onClick={() => handleEditar(ev.id)}
-                        className="text-blue-400 hover:underline"
-                      >
-                        Editar
-                      </button>
-                      <button
-                        onClick={() => handleExcluir(ev.id)}
-                        className="text-red-400 hover:underline"
-                      >
-                        Excluir
-                      </button>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </section>
+          {/* Lista de eventos */}
+          {sorted.length === 0 ? (
+            <p className="text-center text-gray-400">Nenhum evento encontrado.</p>
+          ) : (
+            <ul className="space-y-3">
+              {sorted.map(ev => (
+                <li key={ev.id} className={`flex justify-between items-center p-4 rounded-xl border shadow ${ev.destaque ? 'border-yellow-500 bg-[#1e293b]' : 'border-gray-600 bg-[#0f172a]'}`}>
+                  <div>
+                    <strong className="text-white">{ev.nome}</strong>
+                    <span className="ml-2 text-xs text-gray-400">{ev.data && new Date(ev.data).toLocaleString('pt-BR')}</span>
+                    <div className="text-sm text-gray-400">{ev.local} — {ev.categoria} — {ev.preco}</div>
+                  </div>
+                  <div className="flex space-x-4">
+                    <button onClick={() => openModal(false, ev.id)} className="text-blue-400 hover:underline">Editar</button>
+                    <button onClick={() => handleExcluir(ev.id)} disabled={deleteId === ev.id} className={`${deleteId === ev.id ? 'text-gray-500' : 'text-red-400 hover:underline'}`}>{deleteId === ev.id ? '...' : 'Excluir'}</button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
+
+        {/* Modal de Formulário */}
+        {showFormModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 overflow-auto">
+            <div className="bg-[#1e293b] w-full max-w-md max-h-[90vh] overflow-y-auto rounded-xl p-6 space-y-4">
+              <h2 className="text-xl font-semibold text-white">{editId != null ? 'Editar Evento' : 'Adicionar Evento'}</h2>
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <input name="nome" value={form.nome} onChange={handleChange} placeholder="Nome do evento *" required className="w-full p-3 bg-[#1e293b] rounded border border-[#475569] text-white" />
+                <input type="datetime-local" name="data" value={form.data} onChange={handleChange} required className="w-full p-3 bg-[#1e293b] rounded border border-[#475569] text-white" />
+                <input name="local" value={form.local} onChange={handleChange} placeholder="Local *" required className="w-full p-3 bg-[#1e293b] rounded border border-[#475569] text-white" />
+                <input name="preco" value={form.preco} onChange={handleChange} placeholder="Preço (ex: Grátis)" className="w-full p-3 bg-[#1e293b] rounded border border-[#475569] text-white" />
+                <select name="categoria" value={form.categoria} onChange={handleChange} required className="w-full p-3 bg-[#1e293b] rounded border border-[#475569] text-white">
+                  <option value="" disabled>-- Categoria * --</option>
+                  {CATEGORIAS.map(cat => <option key={cat} value={cat}>{cat}</option>)}
+                </select>
+                {/* Upload de arquivo */}
+                <div>
+                  <label className="block text-white mb-1">Upload de imagem</label>
+                  <input type="file" accept="image/*" onChange={handleFileSelect} className="w-full text-white" />
+                </div>
+                <input name="imagem" value={form.imagem} onChange={handleChange} placeholder="URL da imagem" className="w-full p-3 bg-[#1e293b] rounded border border-[#475569] text-white" />
+                {form.imagem && <img src={form.imagem} onError={e => e.currentTarget.style.display = 'none'} className="w-full rounded" alt="Preview" />}  
+                <textarea name="descricao" value={form.descricao} onChange={handleChange} placeholder="Descrição" rows={3} className="w-full p-3 bg-[#1e293b] rounded border border-[#475569] text-white" />
+                <label className="flex items-center gap-2 text-white"><input type="checkbox" name="destaque" checked={form.destaque} onChange={handleChange} className="accent-red-500" />Evento em destaque / Promoção</label>
+                <div className="flex justify-end space-x-4">
+                  <button type="button" onClick={() => setShowFormModal(false)} className="px-4 py-2 rounded border border-gray-500 text-gray-300 hover:bg-gray-700">Cancelar</button>
+                  <button type="submit" disabled={loading} className="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded font-semibold">{loading ? 'Salvando...' : (editId!=null?'Atualizar Evento':'Adicionar Evento')}</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
       </main>
     </>
   )

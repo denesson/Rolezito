@@ -18,13 +18,18 @@ export default function AdminPanel() {
   const [editId, setEditId] = useState(null)
   const router = useRouter()
 
-  // Proteção de rota (cliente)
+  // Proteção de rota (cliente) usando role
   useEffect(() => {
     if (typeof window !== "undefined") {
       const userStr = localStorage.getItem("user")
-      if (!userStr) return router.push("/login")
+      if (!userStr) {
+        router.push("/login")
+        return
+      }
       const user = JSON.parse(userStr)
-      if (!user.admin) router.push("/login")
+      if (user.role !== "produtor" && user.role !== "admin") {
+        router.push("/login")
+      }
     }
   }, [router])
 
@@ -71,7 +76,9 @@ export default function AdminPanel() {
     e.preventDefault()
     const payload = {
       nome: form.nome,
-      data: form.data ? new Date(form.data).toISOString() : new Date().toISOString(),
+      data: form.data
+        ? new Date(form.data).toISOString()
+        : new Date().toISOString(),
       local: form.local,
       descricao: form.descricao,
       preco: form.preco,
@@ -102,7 +109,9 @@ export default function AdminPanel() {
     const ev = eventos.find(e => e.id === id)
     setForm({
       nome: ev.nome,
-      data: ev.data ? new Date(ev.data).toISOString().slice(0, 16) : "",
+      data: ev.data
+        ? new Date(ev.data).toISOString().slice(0, 16)
+        : "",
       local: ev.local,
       preco: ev.preco,
       descricao: ev.descricao,
@@ -135,7 +144,10 @@ export default function AdminPanel() {
             Painel Admin — Gerenciar Eventos
           </h1>
 
-          <form onSubmit={handleSubmit} className="mb-10 space-y-4 bg-[#0f172a] p-6 rounded-xl border border-[#334155] shadow-md">
+          <form
+            onSubmit={handleSubmit}
+            className="mb-10 space-y-4 bg-[#0f172a] p-6 rounded-xl border border-[#334155] shadow-md"
+          >
             <input
               type="text"
               name="nome"
@@ -232,7 +244,7 @@ export default function AdminPanel() {
               <p className="text-gray-400">Nenhum evento cadastrado.</p>
             ) : (
               <ul className="space-y-3">
-                {eventos.map((ev) => (
+                {eventos.map(ev => (
                   <li
                     key={ev.id}
                     className={`border rounded-xl p-4 flex justify-between items-center ${

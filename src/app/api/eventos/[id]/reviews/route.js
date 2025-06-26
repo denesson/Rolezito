@@ -1,13 +1,13 @@
 // src/app/api/eventos/[id]/reviews/route.js
 import { NextResponse } from "next/server"
-import prisma                from "../../../../../../lib/prisma"     // ou use o path relativo correto
-import jwt                   from "jsonwebtoken"
-import { cookies }           from "next/headers"
+import prisma from "../../../../../../lib/prisma"
+import jwt from "jsonwebtoken"
+import { cookies } from "next/headers"
 
-// helper para ler o usuário logado via cookie JWT
+// Puxa o usuário logado a partir do cookie "token"
 async function getCurrentUser() {
-  const store = await cookies()
-  const token = store.get("token")?.value
+  const cookieStore = cookies()
+  const token = cookieStore.get("token")?.value
   if (!token) return null
   try {
     const { userId } = jwt.verify(token, process.env.JWT_SECRET)
@@ -20,11 +20,15 @@ async function getCurrentUser() {
 // GET: lista todas as reviews de um evento
 export async function GET(req, { params }) {
   const eventId = parseInt(params.id, 10)
-  const revs = await prisma.review.findMany({
+  if (Number.isNaN(eventId)) {
+    return NextResponse.json({ erro: "ID de evento inválido" }, { status: 400 })
+  }
+
+  const reviews = await prisma.review.findMany({
     where: { eventId },
     orderBy: { criadoEm: "desc" },
   })
-  return NextResponse.json(revs)
+  return NextResponse.json(reviews)
 }
 
 // POST: cria uma nova review
@@ -35,18 +39,30 @@ export async function POST(req, { params }) {
   }
 
   const eventId = parseInt(params.id, 10)
-  const { comentario, rating } = await req.json()
-  if (!comentario || rating < 1 || rating > 5) {
+  if (Number.isNaN(eventId)) {
+    return NextResponse.json({ erro: "ID de evento inválido" }, { status: 400 })
+  }
+
+  const { comentario, stars } = await req.json()
+  if (
+    typeof comentario !== "string" ||
+    comentario.trim() === "" ||
+    typeof stars !== "number" ||
+    stars < 1 ||
+    stars > 5
+  ) {
     return NextResponse.json({ erro: "Dados inválidos" }, { status: 400 })
   }
 
-  const rev = await prisma.review.create({
+  // Aqui usamos o campo `rating`, que é o que seu schema Prisma espera
+  const review = await prisma.review.create({
     data: {
-      comentario,
-      rating,
+      comentario: comentario.trim(),
+      rating: stars,        // ← passo `stars` para `rating`
       userId: user.id,
       eventId,
     },
   })
-  return NextResponse.json(rev, { status: 201 })
+
+  return NextResponse.json(review, { status: 201 })
 }

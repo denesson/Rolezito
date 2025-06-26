@@ -24,11 +24,18 @@ model Evento {
   reviews   Review[]
 }
 
+enum Role {
+  usuario
+  produtor
+  admin
+}
+
 model Usuario {
   id       Int       @id @default(autoincrement())
   email    String    @unique
   senha    String
   nome     String
+  role      Role      @default(usuario)   
   admin    Boolean   @default(false)
   criadoEm DateTime  @default(now())
 

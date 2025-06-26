@@ -23,6 +23,7 @@ export default function EventosPage() {
   const [busca, setBusca] = useState("")
   const [categoria, setCategoria] = useState("")
   const [dataBusca, setDataBusca] = useState("")
+  const [sortKey, setSortKey] = useState("data")
   const [eventos, setEventos] = useState([])
   const [favoritos, setFavoritos] = useState(new Set())
   const [recommendados, setRecommendados] = useState([])
@@ -102,6 +103,7 @@ export default function EventosPage() {
     return cats.some(c => c.toLowerCase().includes(lower))
   }
 
+  // aplica filtros de busca, categoria e data
   const eventosFiltrados = eventos.filter(ev =>
     eventoTemCategoria(ev, categoria) &&
     (!dataBusca || ev.data?.startsWith(dataBusca)) &&
@@ -109,8 +111,18 @@ export default function EventosPage() {
       ev.local?.toLowerCase().includes(busca.toLowerCase()))
   )
 
-  const listaParaExibir =
-    categoria === "Recomendados" ? recommendados : eventosFiltrados
+  // escolhe lista base (recomendados ou filtrados)
+  const listaBase = categoria === "Recomendados" ? recommendados : eventosFiltrados
+
+  // ordena conforme sortKey
+  const eventosOrdenados = [...listaBase]
+  if (sortKey === "data") {
+    eventosOrdenados.sort((a, b) => new Date(a.data) - new Date(b.data))
+  } else if (sortKey === "popularidade") {
+    eventosOrdenados.sort((a, b) => (b.rating || 0) - (a.rating || 0))
+  } else if (sortKey === "nome") {
+    eventosOrdenados.sort((a, b) => a.nome.localeCompare(b.nome))
+  }
 
   return (
     <div className="bg-[#111827] text-white min-h-screen flex flex-col">
@@ -141,29 +153,56 @@ export default function EventosPage() {
         </div>
       )}
 
+      {/* Header section */}
       <div className="max-w-7xl mx-auto px-4 py-8">
-        {/* Título e filtros fora do flex principal */}
-        <h1 className="text-4xl sm:text-5xl font-extrabold mb-6 text-center text-[#E11D48]">
+        {/* Título centralizado */}
+        <h1 className="text-4xl sm:text-5xl font-extrabold text-[#E11D48] text-center mb-4">
           Agenda de Eventos
         </h1>
 
-        <section className="mb-6 flex flex-col sm:flex-row gap-4 items-center justify-between">
-          <input
-            type="search"
-            placeholder="Buscar eventos, lugares..."
-            value={busca}
-            onChange={e => setBusca(e.target.value)}
-            className="w-full sm:w-64 px-4 py-2 rounded-full border border-[#334155] bg-[#1F2937] text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#E11D48] text-sm"
-          />
+        {/* Controles em linha única */}
+        <div className="flex flex-col md:flex-row items-center justify-between gap-4 mb-6">
+          {/* Filtro de data (esquerda) */}
           <input
             type="date"
             value={dataBusca}
             onChange={e => setDataBusca(e.target.value)}
-            className="w-full sm:w-40 px-4 py-2 rounded-full border border-[#334155] bg-[#1F2937] text-white text-sm"
+            placeholder="Filtrar por data"
+            className="w-full md:w-40 px-4 py-2 rounded-full border border-[#334155] bg-[#1F2937] text-white text-sm focus:outline-none focus:ring-2 focus:ring-[#E11D48]"
           />
-        </section>
 
-        <section className="mb-8 flex flex-wrap gap-3 justify-center">
+          {/* Ordenar + Busca (direita) */}
+          <div className="flex flex-col sm:flex-row items-center sm:space-x-4 w-full md:w-auto">
+            <div className="flex items-center space-x-2 mb-2 sm:mb-0">
+              <label htmlFor="sort" className="text-white font-semibold">
+                Ordenar por:
+              </label>
+              <select
+                id="sort"
+                value={sortKey}
+                onChange={e => setSortKey(e.target.value)}
+                className="bg-[#1e2937] text-white p-2 rounded focus:outline-none focus:ring-2 focus:ring-[#E11D48]"
+              >
+                <option value="data">Data</option>
+                <option value="popularidade">Popularidade</option>
+                <option value="nome">Nome</option>
+              </select>
+            
+        </div>
+            <input
+              type="search"
+              placeholder="Buscar eventos, lugares..."
+              value={busca}
+              onChange={e => setBusca(e.target.value)}
+              className="w-64 px-4 py-2 rounded-full border border-[#334155] bg-[#1F2937] text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#E11D48] text-sm"
+            />
+          </div>
+        </div>
+
+        {/* Categorias */}
+
+        {/* Categories */}
+        <section className="flex flex-wrap gap-3 justify-center mb-6">
           <button
             onClick={() => setCategoria("")}
             className={`px-5 py-2 rounded-full font-semibold text-sm ${!categoria
@@ -187,17 +226,16 @@ export default function EventosPage() {
           ))}
         </section>
 
-        {/* Grid + Sidebar flexível */}
+        {/* Main grid and sidebar */}
         <div className="flex flex-col lg:flex-row gap-8">
-          {/* Conteúdo principal */}
           <div className="flex-1">
-            {listaParaExibir.length === 0 ? (
+            {eventosOrdenados.length === 0 ? (
               <p className="text-center text-gray-400 mt-20">
                 Nenhum evento {categoria === 'Recomendados' ? 'recomendado' : 'encontrado'}.
               </p>
             ) : (
               <div className="grid gap-5 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-                {listaParaExibir.map(ev => (
+                {eventosOrdenados.map(ev => (
                   <EventCard
                     key={ev.id}
                     evento={ev}
@@ -208,8 +246,6 @@ export default function EventosPage() {
               </div>
             )}
           </div>
-
-          {/* Sidebar só desktop */}
           <div className="hidden lg:block">
             <SideBanner>
               <img

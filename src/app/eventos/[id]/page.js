@@ -1,15 +1,19 @@
 // src/app/eventos/[id]/page.jsx
 "use client"
 import { useState, useEffect } from "react"
-import { useParams } from "next/navigation"
+import { useParams, useRouter } from "next/navigation"
 import Link from "next/link"
-import NavMenu        from '../../components/NavMenu'
-import Footer         from '../../components/Footer'
+import NavMenu from '../../components/NavMenu'
+import Footer from '../../components/Footer'
 import FavoriteButton from '../../components/FavoriteButton'
 import { Star } from "lucide-react"
+import { useAuth } from '../../../hooks/useAuth'
 
 export default function EventoDetalhe() {
   const { id } = useParams()
+  const router = useRouter()
+  const { user } = useAuth()
+
   const [evento, setEvento] = useState(null)
   const [loading, setLoading] = useState(true)
   const [favorito, setFavorito] = useState(false)
@@ -17,6 +21,7 @@ export default function EventoDetalhe() {
   const [rating, setRating] = useState(0)
   const [comentario, setComentario] = useState("")
   const [submitting, setSubmitting] = useState(false)
+  const [erro, setErro] = useState("")
 
   useEffect(() => {
     async function fetchData() {
@@ -25,12 +30,14 @@ export default function EventoDetalhe() {
         // Detalhes do evento
         const evtRes = await fetch(`/api/eventos/${id}`)
         if (evtRes.ok) setEvento(await evtRes.json())
-        // Estado de favorito
+
+        // Favorito
         const favRes = await fetch("/api/favoritos", { credentials: "include" })
         if (favRes.ok) {
           const favs = await favRes.json()
           setFavorito(favs.some(f => f.eventId === parseInt(id)))
         }
+
         // Reviews
         const revRes = await fetch(`/api/eventos/${id}/reviews`, { credentials: "include" })
         if (revRes.ok) setReviews(await revRes.json())
@@ -59,22 +66,27 @@ export default function EventoDetalhe() {
   }
 
   const enviarReview = async () => {
-    if (!comentario || rating < 1) return
+    setErro("")
+    if (rating < 1) {
+      setErro("Selecione uma nota de 1 a 5 estrelas.")
+      return
+    }
+
     setSubmitting(true)
     try {
       const res = await fetch(`/api/eventos/${id}/reviews`, {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ comentario, rating }),
+        body: JSON.stringify({ comentario, stars: rating }),
       })
-      if (res.ok) {
+      if (!res.ok) {
+        console.error("Erro ao enviar review", res.status)
+      } else {
         const newRev = await res.json()
         setReviews(prev => [newRev, ...prev])
         setComentario("")
         setRating(0)
-      } else {
-        console.error('Erro ao enviar review', res.status)
       }
     } catch (err) {
       console.error(err)
@@ -103,7 +115,7 @@ export default function EventoDetalhe() {
     <div className="bg-[#111827] text-white min-h-screen flex flex-col">
       <NavMenu />
       <div className="flex items-center justify-center bg-[#111827] py-10">
-        <main className="bg-[#1F2937] text-white w-full max-w-2xl p-8 rounded-2xl overflow-hidden space-y-6">
+        <main className="bg-[#1F2937] text-white w-full max-w-2xl p-8 rounded-2xl space-y-6">
 
           <Link href="/eventos" className="text-sm text-[#E11D48] hover:underline">
             ← Voltar para Eventos
@@ -132,16 +144,16 @@ export default function EventoDetalhe() {
           <a
             href={`data:text/calendar;charset=utf8,${encodeURIComponent(
               `BEGIN:VCALENDAR
-              VERSION:2.0
-              BEGIN:VEVENT
-              SUMMARY:${evento.nome}
-              DTSTART:${new Date(evento.data)
+VERSION:2.0
+BEGIN:VEVENT
+SUMMARY:${evento.nome}
+DTSTART:${new Date(evento.data)
                 .toISOString()
                 .replace(/[-:]/g, '')
                 .split('.')[0]}
-              DESCRIPTION:${evento.descricao}
-              END:VEVENT
-              END:VCALENDAR`
+DESCRIPTION:${evento.descricao}
+END:VEVENT
+END:VCALENDAR`
             )}`}
             download={`${evento.nome.replace(/\s+/g, '_')}.ics`}
             className="text-[#0EA5E9] underline text-sm"
@@ -152,31 +164,50 @@ export default function EventoDetalhe() {
           {/* Avaliações */}
           <section className="pt-6 border-t border-[#334155] space-y-4">
             <h2 className="text-xl font-semibold">Deixe sua avaliação</h2>
-            <div className="flex gap-2">
-              {[1, 2, 3, 4, 5].map(n => (
+
+            {!user ? (
+              // se não estiver logado, mostra link para login
+              <p className="text-center text-red-400">
+                Você precisa{' '}
+                <Link href="/login" className="underline text-red-500">
+                  entrar
+                </Link>{' '}
+                para avaliar.
+              </p>
+            ) : (
+              <>
+                {/* suas estrelas originais */}
+                <div className="flex gap-2">
+                  {[1, 2, 3, 4, 5].map(n => (
+                    <button
+                      key={n}
+                      onClick={() => setRating(n)}
+                      className="text-2xl"
+                    >
+                      {n <= rating ? '★' : '☆'}
+                    </button>
+                  ))}
+                </div>
+
+                {/* seu textarea original */}
+                <textarea
+                  value={comentario}
+                  onChange={e => setComentario(e.target.value)}
+                  rows={3}
+                  className="w-full bg-[#1F2937] border border-[#334155] rounded p-2 text-white"
+                  placeholder="Comentário"
+                />
+
+                {/* seu botão original */}
                 <button
-                  key={n}
-                  onClick={() => setRating(n)}
-                  className="text-2xl"
+                  onClick={enviarReview}
+                  disabled={submitting}
+                  className="px-4 py-2 bg-[#E11D48] rounded hover:bg-[#F43F5E]"
                 >
-                  {n <= rating ? "★" : "☆"}
+                  {submitting ? 'Enviando...' : 'Enviar'}
                 </button>
-              ))}
-            </div>
-            <textarea
-              value={comentario}
-              onChange={e => setComentario(e.target.value)}
-              rows={3}
-              className="w-full bg-[#1F2937] border border-[#334155] rounded p-2 text-white"
-              placeholder="Comentário"
-            />
-            <button
-              onClick={enviarReview}
-              disabled={submitting}
-              className="px-4 py-2 bg-[#E11D48] rounded hover:bg-[#F43F5E]"
-            >
-              {submitting ? "Enviando..." : "Enviar"}
-            </button>
+              </>
+            )}
           </section>
 
           {/* Lista de reviews */}
@@ -186,9 +217,9 @@ export default function EventoDetalhe() {
               <p className="text-gray-400">Nenhuma avaliação ainda.</p>
             ) : (
               reviews.map(r => (
-                <div key={r.id} className="bg-[#1F2937] p-4 rounded-lg">
-                  <p className="text-sm font-semibold text-white mb-1">{r.user?.nome}</p>
-                  <div className="flex gap-1 mb-2">
+                <div key={r.id} className="bg-[#1e293b] p-4 rounded-lg space-y-1">
+                  <p className="text-sm font-semibold text-white">{r.user?.nome}</p>
+                  <div className="flex gap-1">
                     {[1, 2, 3, 4, 5].map(i => (
                       <Star
                         key={i}
@@ -198,9 +229,10 @@ export default function EventoDetalhe() {
                       />
                     ))}
                   </div>
-                  <p className="text-gray-300 mb-1">{r.comentario}</p>
+                  {r.comentario && <p className="text-gray-300">{r.comentario}</p>}
                   <p className="text-xs text-gray-500">
-                    {new Date(r.criadoEm).toLocaleString("pt-BR")}
+                    {new Date(r.criadoEm).toLocaleDateString("pt-BR")}{" "}
+                    {new Date(r.criadoEm).toLocaleTimeString("pt-BR")}
                   </p>
                 </div>
               ))

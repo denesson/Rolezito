@@ -1,9 +1,35 @@
+// src/app/page.jsx (ou Home)
+"use client"
 import Link from "next/link"
 import Image from "next/image"
-import NavMenu from "./components/NavMenu"
+import { useState, useEffect } from "react"
+import NavMenu from "../app/components/NavMenu"
+import EventCard from "../app/components/EventCard"
 import Logo from "../../public/logo-rolezito.png"
 
 export default function Home() {
+  const [destaques, setDestaques] = useState([])
+
+  useEffect(() => {
+    async function carregar() {
+      try {
+        const res = await fetch('/api/eventos')
+        if (res.ok) {
+          const list = await res.json()
+          const proximos = list
+            .map(ev => ({ ...ev, date: new Date(ev.data) }))
+            .filter(ev => ev.date >= new Date())
+            .sort((a, b) => a.date - b.date)
+            .slice(0, 3)
+          setDestaques(proximos)
+        }
+      } catch {
+        setDestaques([])
+      }
+    }
+    carregar()
+  }, [])
+
   return (
     <>
       <NavMenu />
@@ -38,8 +64,33 @@ export default function Home() {
           Ver Agenda de Eventos
         </Link>
 
+        {/* Destaques (próximos eventos) */}
+        <section className="w-full max-w-4xl mt-12">
+          <h3 className="text-2xl font-bold text-white mb-4 text-center">
+            Próximos Eventos
+          </h3>
+          <div className="flex overflow-x-auto gap-4">
+            {destaques.map(ev => (
+              <div key={ev.id} className="min-w-[280px] bg-[#1f2937] p-4 rounded-xl shadow-md">
+                <h4 className="text-lg font-semibold text-white mb-1">
+                  {ev.nome}
+                </h4>
+                <p className="text-sm text-gray-400 mb-2">
+                  {new Date(ev.date).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' })}
+                </p>
+                <Link
+                  href={`/eventos/${ev.id}`}
+                  className="text-[#0EA5E9] hover:underline text-sm"
+                >
+                  Ver detalhes →
+                </Link>
+              </div>
+            ))}
+          </div>
+        </section>
+
         {/* Rodapé */}
-        <footer className="mt-12 text-[#9CA3AF] text-sm text-center">
+        <footer className="mt-16 text-[#9CA3AF] text-sm text-center">
           Desenvolvido por <strong className="text-[#0EA5E9]">Denesson Barreto</strong> © {new Date().getFullYear()}
         </footer>
       </main>

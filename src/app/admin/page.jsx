@@ -199,7 +199,7 @@ export default function AdminPanel() {
                   <option value="" disabled>-- Categoria * --</option>
                   {CATEGORIAS.map(cat => <option key={cat} value={cat}>{cat}</option>)}
                 </select>
-                {/* Upload de arquivo */}
+                {/* Upload de arquivo **/}
                 <div>
                   <label className="block text-white mb-1">Upload de imagem</label>
                   <input type="file" accept="image/*" onChange={handleFileSelect} className="w-full text-white" />

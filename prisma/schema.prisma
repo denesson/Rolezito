@@ -63,3 +63,11 @@ model Review {
   eventId    Int
   criadoEm   DateTime @default(now())
 }
+
+model Subscription {
+  id         Int      @id @default(autoincrement())
+  endpoint   String   @unique
+  p256dh     String
+  auth       String
+  criadoEm   DateTime @default(now())
+}

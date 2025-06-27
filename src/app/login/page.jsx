@@ -3,27 +3,46 @@
 import React, { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
-import { useAuth } from "../../hooks/useAuth"
 import NavMenu from "../components/NavMenu"
 import Footer from "../components/Footer"
 
 export default function LoginPage() {
   const router = useRouter()
-  const { login, user } = useAuth()
   const [nome, setNome] = useState("")
   const [senha, setSenha] = useState("")
   const [erro, setErro] = useState("")
 
-  // redireciona se já estiver logado
+  // Redireciona se já estiver logado (token no localStorage)
   useEffect(() => {
-    if (user) router.replace("/eventos")
-  }, [user, router])
+    if (typeof window !== "undefined") {
+      const token = localStorage.getItem("token")
+      if (token) router.replace("/eventos")
+    }
+  }, [router])
 
   async function handleLogin(e) {
     e.preventDefault()
     setErro("")
     try {
-      await login({ nome, senha })
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ nome, senha }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.erro || "Erro ao logar")
+
+      // Salva token e user no localStorage - role vindo do backend!
+      localStorage.setItem("token", data.token)
+      localStorage.setItem(
+        "user",
+        JSON.stringify({
+          nome: data.nome,      // nome correto do banco
+          email: data.email,
+          admin: data.admin,
+          role: data.role,      // role correta do banco
+        })
+      )
       router.push("/eventos")
     } catch (err) {
       setErro(err.message || "Erro ao logar")

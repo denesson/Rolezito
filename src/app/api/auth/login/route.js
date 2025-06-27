@@ -1,8 +1,8 @@
 // src/app/api/auth/login/route.js
 import { NextResponse } from 'next/server'
-import prisma from '../../../../../lib/prisma'    // 4 níveis para chegar em src/lib/prisma.js
+import prisma from '../../../../../lib/prisma'    // Ajuste o path se seu prisma estiver em outro lugar
 import bcrypt from 'bcryptjs'
-import jwt    from 'jsonwebtoken'
+import jwt from 'jsonwebtoken'
 
 export async function POST(request) {
   try {
@@ -15,9 +15,8 @@ export async function POST(request) {
       )
     }
 
-    const user = await prisma.usuario.findFirst({
-      where: { nome }
-    })
+    // Busca usuário pelo nome
+    const user = await prisma.usuario.findFirst({ where: { nome } })
     if (!user) {
       return NextResponse.json(
         { erro: 'Usuário não encontrado' },
@@ -25,6 +24,7 @@ export async function POST(request) {
       )
     }
 
+    // Confere senha
     const validPassword = await bcrypt.compare(senha, user.senha)
     if (!validPassword) {
       return NextResponse.json(
@@ -33,23 +33,30 @@ export async function POST(request) {
       )
     }
 
-    // Gera o JWT
-    const token = jwt.sign(
-      { userId: user.id },
-      process.env.JWT_SECRET,
-      { expiresIn: '2d' }
-    )
+    // Gera o payload completo para o JWT (sempre inclui role)
+const payload = {
+  id: user.id, // NÃO "userId"
+  nome: user.nome,
+  email: user.email,
+  admin: user.admin,
+  role: user.role || (user.admin ? "admin" : "usuario")
+}
+const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: "2d" })
 
-    // Prepara a resposta com o cookie
-    const res = NextResponse.json(
-      { nome: user.nome, email: user.email, admin: user.admin }
-    )
+    // Resposta: dados + token (para o localStorage) e cookie httpOnly (retrocompatibilidade)
+    const res = NextResponse.json({
+      nome: user.nome,
+      email: user.email,
+      admin: user.admin,
+      token,
+      role: payload.role
+    })
     res.cookies.set('token', token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
       path: '/',
-      maxAge: 2 * 24 * 60 * 60  // 2 dias em segundos
+      maxAge: 2 * 24 * 60 * 60 // 2 dias
     })
 
     return res

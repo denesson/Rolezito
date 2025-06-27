@@ -1,4 +1,3 @@
-// src/hooks/useAuth.js
 "use client"
 import { useState, useEffect, createContext, useContext } from "react"
 import { useRouter } from "next/navigation"
@@ -9,22 +8,38 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null)
   const router = useRouter()
 
-  // 1) ao montar, pergunta ao servidor quem está logado
+  // Ao montar, carrega user/token do localStorage ou da API
   useEffect(() => {
     async function loadUser() {
+      if (typeof window !== "undefined") {
+        const rawUser = localStorage.getItem("user")
+        if (rawUser) {
+          try {
+            setUser(JSON.parse(rawUser))
+            return
+          } catch { /* ignora e segue para /me */ }
+        }
+      }
+      // fallback: tenta via API (cookie)
       try {
         const res = await fetch("/api/auth/me", { credentials: "include" })
         const data = await res.json()
-        setUser(data.user)
-      } catch (err) {
-        console.error("Erro ao buscar usuário:", err)
+        if (data.user) {
+          setUser(data.user)
+          if (typeof window !== "undefined") {
+            localStorage.setItem("user", JSON.stringify(data.user))
+          }
+        } else {
+          setUser(null)
+        }
+      } catch {
         setUser(null)
       }
     }
     loadUser()
   }, [])
 
-  // 2) login chama /api/auth/login e grava o usuário
+  // Login: salva user e token no localStorage
   async function login({ nome, senha }) {
     try {
       const res = await fetch("/api/auth/login", {
@@ -36,27 +51,35 @@ export function AuthProvider({ children }) {
       const data = await res.json()
       if (!res.ok) throw new Error(data.erro || "Falha no login")
       setUser(data)
+      if (typeof window !== "undefined") {
+        localStorage.setItem("user", JSON.stringify(data))
+        if (data.token) localStorage.setItem("token", data.token)
+      }
       return data
     } catch (err) {
-      console.error("Login falhou:", err)
+      setUser(null)
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("user")
+        localStorage.removeItem("token")
+      }
       throw err
     }
   }
 
-  // 3) logout limpa o cookie via endpoint e faz hard reload para login
+  // Logout: limpa tudo do localStorage e recarrega
   async function logout() {
     try {
       await fetch("/api/auth/logout", {
         method: "POST",
         credentials: "include",
       })
-    } catch (err) {
-      console.error("Logout falhou:", err)
-    } finally {
-      setUser(null)
-      // Hard reload para garantir remoção completa do cookie e SSR revalidado
-      window.location.href = "/login"
+    } catch { /* ignora */ }
+    setUser(null)
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("user")
+      localStorage.removeItem("token")
     }
+    window.location.href = "/login"
   }
 
   return (

@@ -18,7 +18,7 @@ const CATEGORIAS = [
 export default function AdminPanel() {
   const router = useRouter()
   const [eventos, setEventos] = useState([])
-  const [form, setForm] = useState({ nome:'', data:'', local:'', preco:'', descricao:'', imagem:'', categoria:'', destaque:false })
+  const [form, setForm] = useState({ nome: '', data: '', local: '', preco: '', descricao: '', imagem: '', categoria: '', destaque: false })
   const [editId, setEditId] = useState(null)
   const [loading, setLoading] = useState(false)
   const [deleteId, setDeleteId] = useState(null)
@@ -29,30 +29,45 @@ export default function AdminPanel() {
 
   // Guard de rota
   useEffect(() => {
-  if (typeof window === "undefined") return;
-  const raw = localStorage.getItem("user");
-  if (!raw) {
-    router.replace("/login");
-    return;
-  }
-  let user;
-  try {
-    user = JSON.parse(raw);
-  } catch {
-    router.replace("/login");
-    return;
-  }
-  // Protege: só admin OU produtor
-  if (user.role !== "admin" && user.role !== "produtor") {
-    router.replace("/login");
-  }
-}, [router]);
+    if (typeof window === "undefined") return
+    const raw = localStorage.getItem("user")
+    if (!raw) {
+      router.replace("/login")
+      return
+    }
+    let user
+    try { user = JSON.parse(raw) } catch { router.replace("/login"); return }
+    if (
+      user.role !== "admin" &&
+      user.role !== "produtor" &&
+      user.admin !== true
+    ) {
+      router.replace("/login")
+    }
+  }, [router])
 
-  // Fetch eventos
-  useEffect(() => { fetchEventos() }, [])
+  // Sempre pega token do localStorage
+  function getToken() {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("token")
+    }
+    return null
+  }
+
+  // *** SEMPRE CARREGUE OS EVENTOS AO MONTAR ***
+  useEffect(() => {
+    fetchEventos();
+  }, []);
+
   async function fetchEventos() {
     try {
-      const resp = await fetch("/api/admin")
+      const token = localStorage.getItem("token")
+      if (!token) throw new Error("Sem token")
+      const resp = await fetch("/api/admin", {
+        headers: {
+          "Authorization": `Bearer ${token}`,
+        }
+      })
       if (!resp.ok) throw new Error()
       setEventos(await resp.json())
     } catch {
@@ -60,14 +75,12 @@ export default function AdminPanel() {
     }
   }
 
-  // Upload de arquivo para imagem
+  // Upload de arquivo para imagem (sem alteração)
   async function handleFileSelect(e) {
     const file = e.target.files[0]
     if (!file) return
-    // Preview local imediato
     const previewUrl = URL.createObjectURL(file)
     setForm(f => ({ ...f, imagem: previewUrl }))
-    // Enviar para API
     const formData = new FormData()
     formData.append("file", file)
     try {
@@ -80,13 +93,12 @@ export default function AdminPanel() {
     }
   }
 
-  // Form handlers
   function handleChange(e) {
     const { name, value, type, checked } = e.target
     setForm(f => ({ ...f, [name]: type === 'checkbox' ? checked : value }))
   }
   function resetForm() {
-    setForm({ nome:'', data:'', local:'', preco:'', descricao:'', imagem:'', categoria:'', destaque:false })
+    setForm({ nome: '', data: '', local: '', preco: '', descricao: '', imagem: '', categoria: '', destaque: false })
     setEditId(null)
   }
   function openModal(isNew, id) {
@@ -96,7 +108,7 @@ export default function AdminPanel() {
       const ev = eventos.find(e => e.id === id)
       setForm({
         nome: ev.nome,
-        data: ev.data ? new Date(ev.data).toISOString().slice(0,16) : '',
+        data: ev.data ? new Date(ev.data).toISOString().slice(0, 16) : '',
         local: ev.local,
         preco: ev.preco,
         descricao: ev.descricao,
@@ -108,13 +120,23 @@ export default function AdminPanel() {
     }
     setShowFormModal(true)
   }
+
+  // Adiciona Authorization nos fetch
   async function handleSubmit(e) {
     e.preventDefault(); setLoading(true)
     const payload = { ...form, data: form.data ? new Date(form.data).toISOString() : new Date().toISOString() }
     const url = editId != null ? `/api/admin/${editId}` : '/api/admin'
     const method = editId != null ? 'PUT' : 'POST'
     try {
-      const resp = await fetch(url, { method, headers: { 'Content-Type':'application/json' }, body: JSON.stringify(payload) })
+      const token = getToken()
+      const resp = await fetch(url, {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify(payload)
+      })
       if (!resp.ok) throw new Error()
       toast.success(editId != null ? 'Evento atualizado' : 'Evento criado')
       resetForm(); fetchEventos(); setShowFormModal(false)
@@ -122,11 +144,16 @@ export default function AdminPanel() {
       toast.error('Erro ao salvar evento')
     } finally { setLoading(false) }
   }
+
   async function handleExcluir(id) {
     if (!window.confirm('Quer excluir este evento?')) return
     setDeleteId(id)
     try {
-      const resp = await fetch(`/api/admin/${id}`, { method: 'DELETE' })
+      const token = getToken()
+      const resp = await fetch(`/api/admin/${id}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` }
+      })
       if (!resp.ok) throw new Error()
       toast.success('Evento excluído')
       resetForm(); fetchEventos()
@@ -216,12 +243,12 @@ export default function AdminPanel() {
                   <input type="file" accept="image/*" onChange={handleFileSelect} className="w-full text-white" />
                 </div>
                 <input name="imagem" value={form.imagem} onChange={handleChange} placeholder="URL da imagem" className="w-full p-3 bg-[#1e293b] rounded border border-[#475569] text-white" />
-                {form.imagem && <img src={form.imagem} onError={e => e.currentTarget.style.display = 'none'} className="w-full rounded" alt="Preview" />}  
+                {form.imagem && <img src={form.imagem} onError={e => e.currentTarget.style.display = 'none'} className="w-full rounded" alt="Preview" />}
                 <textarea name="descricao" value={form.descricao} onChange={handleChange} placeholder="Descrição" rows={3} className="w-full p-3 bg-[#1e293b] rounded border border-[#475569] text-white" />
                 <label className="flex items-center gap-2 text-white"><input type="checkbox" name="destaque" checked={form.destaque} onChange={handleChange} className="accent-red-500" />Evento em destaque / Promoção</label>
                 <div className="flex justify-end space-x-4">
                   <button type="button" onClick={() => setShowFormModal(false)} className="px-4 py-2 rounded border border-gray-500 text-gray-300 hover:bg-gray-700">Cancelar</button>
-                  <button type="submit" disabled={loading} className="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded font-semibold">{loading ? 'Salvando...' : (editId!=null?'Atualizar Evento':'Adicionar Evento')}</button>
+                  <button type="submit" disabled={loading} className="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded font-semibold">{loading ? 'Salvando...' : (editId != null ? 'Atualizar Evento' : 'Adicionar Evento')}</button>
                 </div>
               </form>
             </div>

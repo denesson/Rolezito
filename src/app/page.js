@@ -1,3 +1,4 @@
+// src/app/page.jsx
 "use client"
 import Link from "next/link"
 import Image from "next/image"
@@ -16,6 +17,7 @@ const sponsors = [
 
 export default function Home() {
   const [destaques, setDestaques] = useState([])
+  const [proximos, setProximos] = useState([])
 
   useEffect(() => {
     async function carregar() {
@@ -23,15 +25,22 @@ export default function Home() {
         const res = await fetch('/api/eventos')
         if (res.ok) {
           const list = await res.json()
-          const proximos = list
+          // Destaques = só eventos com destaque
+          const destaqueEvents = list
+            .filter(ev => ev.destaque && ev.imagem)
+            .sort((a, b) => new Date(a.data) - new Date(b.data))
+          setDestaques(destaqueEvents)
+          // Próximos eventos = próximos por data (não importa destaque)
+          const proximosEv = list
             .map(ev => ({ ...ev, date: new Date(ev.data) }))
             .filter(ev => ev.date >= new Date())
             .sort((a, b) => a.date - b.date)
             .slice(0, 3)
-          setDestaques(proximos)
+          setProximos(proximosEv)
         }
       } catch {
         setDestaques([])
+        setProximos([])
       }
     }
     carregar()
@@ -48,7 +57,7 @@ export default function Home() {
             slides={
               destaques.length
                 ? destaques.map(ev => ({
-                    src: ev.imagem || "/slides/default.jpg",
+                    src: ev.imagem,
                     alt: ev.nome,
                   }))
                 : [
@@ -99,7 +108,7 @@ export default function Home() {
             Próximos Eventos
           </h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-            {destaques.map(ev => (
+            {proximos.map(ev => (
               <div key={ev.id} className="bg-[#1f2937] p-4 rounded-xl shadow-md">
                 <h4 className="text-lg font-semibold text-white mb-1">
                   {ev.nome}

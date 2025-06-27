@@ -1,9 +1,9 @@
-// src/app/page.jsx (ou Home)
 "use client"
 import Link from "next/link"
 import Image from "next/image"
 import { useState, useEffect } from "react"
 import NavMenu from "../app/components/NavMenu"
+import HeroCarousel from "../app/components/HeroCarousel"
 import Logo from "../../public/logo-rolezito.png"
 
 // Placeholder de sponsors
@@ -40,9 +40,31 @@ export default function Home() {
   return (
     <>
       <NavMenu />
-      <main className="min-h-screen flex flex-col justify-start items-center bg-[#111827] px-4 py-16 font-sans text-white">
-        {/* Hero Section */}
-        <div className="flex flex-col items-center mb-12 space-y-8">
+
+      <main className="min-h-screen flex flex-col justify-start items-center bg-[#111827] px-4 py-10 font-sans text-white">
+        {/* HeroCarousel menor */}
+        <div className="w-full mb-10">
+          <HeroCarousel
+            slides={
+              destaques.length
+                ? destaques.map(ev => ({
+                    src: ev.imagem || "/slides/default.jpg",
+                    alt: ev.nome,
+                  }))
+                : [
+                    { src: "/slides/event1.jpg", alt: "Evento 1" },
+                    { src: "/slides/event2.jpg", alt: "Evento 2" },
+                    { src: "/slides/event3.jpg", alt: "Evento 3" },
+                  ]
+            }
+            title="Destaques da Semana"
+            interval={6000}
+            height="h-40 md:h-60"
+          />
+        </div>
+        
+        {/* Hero Textual do site */}
+        <div className="flex flex-col items-center mb-6 space-y-6">
           {/* Logo e Título lado a lado */}
           <div className="flex items-center space-x-4">
             <Image src={Logo} alt="Logo Rolezito" width={100} height={70} />
@@ -96,7 +118,7 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Nossos Patrocinadores abaixo */}
+        {/* Nossos Patrocinadores */}
         <section className="w-full max-w-4xl bg-[#1F2937] rounded-xl p-6 mt-12">
           <h3 className="text-center text-lg font-semibold text-[#9CA3AF] mb-4">
             Nossos Patrocinadores

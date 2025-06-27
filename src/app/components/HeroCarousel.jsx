@@ -1,46 +1,64 @@
 "use client"
 import { useState, useEffect } from "react"
-import { motion, AnimatePresence } from "framer-motion"
+import { ChevronLeft, ChevronRight } from "lucide-react"
 
-const slides = [
-  { src: "/slides/event1.jpg", alt: "Evento 1: Show ao vivo" },
-  { src: "/slides/event2.jpg", alt: "Evento 2: Festival de música" },
-  { src: "/slides/event3.jpg", alt: "Evento 3: Balada noturna" },
-]
-
-export default function HeroCarousel() {
+export default function HeroCarousel({
+  slides = [
+    { src: "/slides/event1.jpg", alt: "Show ao vivo" },
+    { src: "/slides/event2.jpg", alt: "Festival de música" },
+    { src: "/slides/event3.jpg", alt: "Balada noturna" },
+  ],
+  title = "Bem-vindo ao Rolezito",
+  interval = 5000,
+}) {
   const [current, setCurrent] = useState(0)
 
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrent(prev => (prev + 1) % slides.length)
-    }, 5000)
+    }, interval)
     return () => clearInterval(timer)
-  }, [])
+  }, [slides.length, interval])
+
+  const prevSlide = () => {
+    setCurrent(prev => (prev - 1 + slides.length) % slides.length)
+  }
+  const nextSlide = () => {
+    setCurrent(prev => (prev + 1) % slides.length)
+  }
 
   return (
-    <div className="relative w-full h-64 md:h-96 overflow-hidden">
-      <AnimatePresence>
-        {slides.map((slide, index) =>
-          index === current && (
-            <motion.img
-              key={slide.src}
-              src={slide.src}
-              alt={slide.alt}
-              className="absolute w-full h-full object-cover"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 1 }}
-            />
-          )
-        )}
-      </AnimatePresence>
+    <div className="relative w-full h-64 md:h-40 overflow-hidden">
+      {slides.map((slide, idx) => (
+        <img
+          key={idx}
+          src={slide.src}
+          alt={slide.alt}
+          className={`absolute w-full h-full object-cover transition-opacity duration-1000 ${idx === current ? 'opacity-100' : 'opacity-0'}`}
+        />
+      ))}
+
       <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-        <h1 className="text-3xl md:text-5xl text-white font-bold animate-fadeIn">
-          Bem-vindo ao Rolezito
+        <h1 className="text-3xl md:text-5xl text-white font-bold">
+          {title}
         </h1>
       </div>
+
+      {/* Arrows */}
+      <button
+        onClick={prevSlide}
+        className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-black/30 p-2 rounded-full hover:bg-black/50 transition"
+      >
+        <ChevronLeft className="text-white" />
+      </button>
+      <button
+        onClick={nextSlide}
+        className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-black/30 p-2 rounded-full hover:bg-black/50 transition"
+      >
+        <ChevronRight className="text-white" />
+      </button>
+
+      {/* Indicators */}
       <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2">
         {slides.map((_, idx) => (
           <button

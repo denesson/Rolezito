@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server"
 import { PrismaClient } from "@prisma/client"
 import webpush from "web-push"
+import jwt from "jsonwebtoken" // npm i jsonwebtoken
 
 const prisma = new PrismaClient()
 
-// Configurar VAPID (defina suas variáveis em .env.local)
+// Configurar VAPID
 const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY
 const privateKey = process.env.VAPID_PRIVATE_KEY
 
@@ -18,19 +19,49 @@ if (!publicKey || !privateKey) {
   )
 }
 
-// GET: Listar todos eventos
-export async function GET() {
+// Função utilitária: checa permissão no POST (usando JWT no header)
+async function authorize(request) {
+  const authHeader = request.headers.get("authorization")
+  if (!authHeader) return null
+  const token = authHeader.replace("Bearer ", "")
   try {
-    const eventos = await prisma.evento.findMany({ orderBy: { data: "asc" } })
-    return NextResponse.json(eventos)
+    const user = jwt.verify(token, process.env.JWT_SECRET)
+    if (user.role === "admin" || user.role === "produtor") return user
+    return null
+  } catch {
+    return null
+  }
+}
+
+// GET: Listar eventos paginados (para scroll infinito)
+export async function GET(request) {
+  try {
+    const { searchParams } = new URL(request.url)
+    const page = Number(searchParams.get("page") || 1)
+    const limit = Number(searchParams.get("limit") || 9)
+    const skip = (page - 1) * limit
+
+    const eventos = await prisma.evento.findMany({
+      orderBy: { data: "asc" },
+      skip,
+      take: limit,
+    })
+    const total = await prisma.evento.count()
+    return NextResponse.json({ eventos, total })
   } catch (err) {
     console.error("Erro GET /api/eventos:", err)
     return NextResponse.json({ erro: "Erro ao buscar eventos" }, { status: 500 })
   }
 }
 
-// POST: Cadastrar evento e disparar notificações
+// POST: Cadastrar evento (SOMENTE ADMIN/PRODUTOR) e disparar notificações
 export async function POST(request) {
+  // Protege o cadastro (precisa token válido e role correto)
+  const user = await authorize(request)
+  if (!user) {
+    return NextResponse.json({ erro: "Não autorizado" }, { status: 403 })
+  }
+
   try {
     const data = await request.json()
     const { nome, data: dataEvento, local, descricao, preco, categoria, imagem, destaque } = data
@@ -52,7 +83,7 @@ export async function POST(request) {
       }
     })
 
-    // Se as chaves não estiverem carregadas, não tenta notificar
+    // Dispara push (se as chaves estiverem carregadas)
     if (publicKey && privateKey) {
       const subs = await prisma.subscription.findMany()
       const payload = JSON.stringify({

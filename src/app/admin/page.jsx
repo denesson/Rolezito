@@ -29,13 +29,24 @@ export default function AdminPanel() {
 
   // Guard de rota
   useEffect(() => {
-    if (typeof window === "undefined") return
-    const raw = localStorage.getItem("user")
-    if (!raw) return router.push("/login")
-    let user
-    try { user = JSON.parse(raw) } catch { return router.push("/login") }
-    if (!user.admin && user.role !== "produtor") return router.push("/login")
-  }, [router])
+  if (typeof window === "undefined") return;
+  const raw = localStorage.getItem("user");
+  if (!raw) {
+    router.replace("/login");
+    return;
+  }
+  let user;
+  try {
+    user = JSON.parse(raw);
+  } catch {
+    router.replace("/login");
+    return;
+  }
+  // Protege: só admin OU produtor
+  if (user.role !== "admin" && user.role !== "produtor") {
+    router.replace("/login");
+  }
+}, [router]);
 
   // Fetch eventos
   useEffect(() => { fetchEventos() }, [])

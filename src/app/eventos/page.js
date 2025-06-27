@@ -1,6 +1,5 @@
-// src/app/eventos/page.jsx
 "use client"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import NavMenu from "../components/NavMenu"
 import EventCard from "../components/EventCard"
 import AdBanner from "../components/AdBanner"
@@ -28,9 +27,14 @@ export default function EventosPage() {
   const [favoritos, setFavoritos] = useState(new Set())
   const [recommendados, setRecommendados] = useState([])
   const [showOnboarding, setShowOnboarding] = useState(false)
+  const [page, setPage] = useState(1)
+  const [hasMore, setHasMore] = useState(true)
+  const [total, setTotal] = useState(0)
+  const loadingRef = useRef(null)
+  const [loading, setLoading] = useState(false)
 
+  // Onboarding
   useEffect(() => {
-    fetchEventos()
     fetchFavoritos()
     if (!localStorage.getItem("seenOnboarding")) {
       setShowOnboarding(true)
@@ -38,6 +42,7 @@ export default function EventosPage() {
     }
   }, [])
 
+  // Recomendados
   useEffect(() => {
     if (categoria === "Recomendados") {
       fetch('/api/eventos/recomendados', { credentials: 'include' })
@@ -47,14 +52,34 @@ export default function EventosPage() {
     }
   }, [categoria])
 
-  async function fetchEventos() {
-    try {
-      const resp = await fetch("/api/eventos")
-      if (resp.ok) setEventos(await resp.json())
-    } catch {
-      setEventos([])
+  // Scroll infinito: carrega eventos por página (API)
+  useEffect(() => {
+    let ignore = false
+    async function fetchEventos() {
+      setLoading(true)
+      const resp = await fetch(`/api/eventos?page=${page}&limit=9`)
+      const data = await resp.json()
+      if (ignore) return
+      setEventos(prev => page === 1 ? data.eventos : [...prev, ...data.eventos])
+      setTotal(data.total)
+      setHasMore((page - 1) * 9 + data.eventos.length < data.total)
+      setLoading(false)
     }
-  }
+    fetchEventos()
+    return () => { ignore = true }
+    // eslint-disable-next-line
+  }, [page])
+
+  // Intersection Observer para scroll infinito
+  useEffect(() => {
+    if (loading) return
+    if (!hasMore) return
+    const observer = new window.IntersectionObserver(entries => {
+      if (entries[0].isIntersecting) setPage(p => p + 1)
+    }, { threshold: 1 })
+    if (loadingRef.current) observer.observe(loadingRef.current)
+    return () => { if (loadingRef.current) observer.unobserve(loadingRef.current) }
+  }, [loading, hasMore])
 
   async function fetchFavoritos() {
     try {
@@ -63,9 +88,7 @@ export default function EventosPage() {
         const data = await resp.json()
         setFavoritos(new Set(data.map(f => f.eventId)))
       }
-    } catch {
-      // falha silenciosa
-    }
+    } catch { }
   }
 
   async function handleFavoritar(eventId) {
@@ -85,9 +108,7 @@ export default function EventosPage() {
           return copy
         })
       }
-    } catch {
-      // falha de rede
-    }
+    } catch { }
   }
 
   function eventoTemCategoria(ev, cat) {
@@ -103,7 +124,7 @@ export default function EventosPage() {
     return cats.some(c => c.toLowerCase().includes(lower))
   }
 
-  // aplica filtros de busca, categoria e data
+  // Aplica filtros de busca, categoria e data
   const eventosFiltrados = eventos.filter(ev =>
     eventoTemCategoria(ev, categoria) &&
     (!dataBusca || ev.data?.startsWith(dataBusca)) &&
@@ -111,10 +132,10 @@ export default function EventosPage() {
       ev.local?.toLowerCase().includes(busca.toLowerCase()))
   )
 
-  // escolhe lista base (recomendados ou filtrados)
+  // Escolhe lista base (recomendados ou filtrados)
   const listaBase = categoria === "Recomendados" ? recommendados : eventosFiltrados
 
-  // ordena conforme sortKey
+  // Ordena conforme sortKey
   const eventosOrdenados = [...listaBase]
   if (sortKey === "data") {
     eventosOrdenados.sort((a, b) => new Date(a.data) - new Date(b.data))
@@ -127,7 +148,6 @@ export default function EventosPage() {
   return (
     <div className="bg-[#111827] text-white min-h-screen flex flex-col">
       <NavMenu />
-
       {/* Banner de patrocínio */}
       <AdBanner>
         <img
@@ -136,7 +156,6 @@ export default function EventosPage() {
           className="block w-full h-auto"
         />
       </AdBanner>
-
       {/* Onboarding modal */}
       {showOnboarding && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
@@ -152,17 +171,12 @@ export default function EventosPage() {
           </div>
         </div>
       )}
-
-      {/* Header section */}
       <div className="max-w-7xl mx-auto px-4 py-8">
-        {/* Título centralizado */}
         <h1 className="text-4xl sm:text-5xl font-extrabold text-[#E11D48] text-center mb-4">
           Agenda de Eventos
         </h1>
-
         {/* Controles em linha única */}
         <div className="flex flex-col md:flex-row items-center justify-between gap-4 mb-6">
-          {/* Filtro de data (esquerda) */}
           <input
             type="date"
             value={dataBusca}
@@ -170,8 +184,6 @@ export default function EventosPage() {
             placeholder="Filtrar por data"
             className="w-full md:w-40 px-4 py-2 rounded-full border border-[#334155] bg-[#1F2937] text-white text-sm focus:outline-none focus:ring-2 focus:ring-[#E11D48]"
           />
-
-          {/* Ordenar + Busca (direita) */}
           <div className="flex flex-col sm:flex-row items-center sm:space-x-4 w-full md:w-auto">
             <div className="flex items-center space-x-2 mb-2 sm:mb-0">
               <label htmlFor="sort" className="text-white font-semibold">
@@ -187,8 +199,7 @@ export default function EventosPage() {
                 <option value="popularidade">Popularidade</option>
                 <option value="nome">Nome</option>
               </select>
-            
-        </div>
+            </div>
             <input
               type="search"
               placeholder="Buscar eventos, lugares..."
@@ -198,10 +209,7 @@ export default function EventosPage() {
             />
           </div>
         </div>
-
         {/* Categorias */}
-
-        {/* Categories */}
         <section className="flex flex-wrap gap-3 justify-center mb-6">
           <button
             onClick={() => setCategoria("")}
@@ -225,7 +233,6 @@ export default function EventosPage() {
             </button>
           ))}
         </section>
-
         {/* Main grid and sidebar */}
         <div className="flex flex-col lg:flex-row gap-8">
           <div className="flex-1">
@@ -243,6 +250,14 @@ export default function EventosPage() {
                     onFavoritar={() => handleFavoritar(ev.id)}
                   />
                 ))}
+                {hasMore && (
+                  <div
+                    ref={loadingRef}
+                    className="col-span-full flex justify-center py-6 text-gray-400"
+                  >
+                    Carregando mais eventos...
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -257,7 +272,6 @@ export default function EventosPage() {
           </div>
         </div>
       </div>
-
       <Footer />
     </div>
   )

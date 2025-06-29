@@ -35,26 +35,20 @@ async function authorize(request) {
 }
 
 // GET: Listar eventos paginados (para scroll infinito)
+// GET: Listar eventos paginados (para scroll infinito)
 export async function GET(request) {
   try {
-    const user = await getCurrentUser()
-    if (!user) return NextResponse.json({ erro: "Não autorizado" }, { status: 401 })
-
     const { searchParams } = new URL(request.url)
     const page = Number(searchParams.get("page") || 1)
     const limit = Number(searchParams.get("limit") || 9)
     const skip = (page - 1) * limit
 
-    // Só filtra por produtor se NÃO for admin
-    const where = user.role === "produtor" ? { produtorId: user.id } : {}
-
     const eventos = await prisma.evento.findMany({
-      where,
       orderBy: { data: "asc" },
       skip,
       take: limit,
     })
-    const total = await prisma.evento.count({ where })
+    const total = await prisma.evento.count()
     return NextResponse.json({ eventos, total })
   } catch (err) {
     console.error("Erro GET /api/eventos:", err)

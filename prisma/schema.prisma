@@ -8,24 +8,28 @@ datasource db {
 }
 
 model Evento {
-  id        Int       @id @default(autoincrement())
-  nome      String
-  data      DateTime
-  local     String
-  descricao String
-  preco     String
-  categoria String
-  imagem    String?
-  criadoEm  DateTime  @default(now())
-  destaque  Boolean   @default(false)
+  id              Int       @id @default(autoincrement())
+  nome            String
+  data            DateTime
+  local           String
+  descricao       String
+  preco           String
+  categoria       String
+  imagem          String?
+  criadoEm        DateTime  @default(now())
+  destaque        Boolean   @default(false)
+  imagemDestaque  String?      // Pode ser null para eventos normais
 
-  produtorId Int? // <--- o "?" deixa o campo nullable (aceita null)
-  produtor   Usuario?   @relation("EventosDoProdutor", fields: [produtorId], references: [id])
+  produtorId      Int?         
+  produtor        Usuario?   @relation("EventosDoProdutor", fields: [produtorId], references: [id])
+
+  destaquePagoAte DateTime?  // <-- NOVO CAMPO!
 
   // back‐relation para Reviews e Favoritos
-  favoritos Favorito[]
-  reviews   Review[]
+  favoritos       Favorito[]
+  reviews         Review[]
 }
+
 
 enum Role {
   usuario

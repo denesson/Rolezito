@@ -18,7 +18,7 @@ const CATEGORIAS = [
 export default function AdminPanel() {
   const router = useRouter()
   const [eventos, setEventos] = useState([])
-  const [form, setForm] = useState({ nome: '', data: '', local: '', preco: '', descricao: '', imagem: '', categoria: '', destaque: false })
+  const [form, setForm] = useState({ nome: '', data: '', local: '', preco: '', descricao: '', imagem: '', categoria: '', destaque: false, imagemDestaque: '', })
   const [editId, setEditId] = useState(null)
   const [loading, setLoading] = useState(false)
   const [deleteId, setDeleteId] = useState(null)
@@ -72,6 +72,72 @@ export default function AdminPanel() {
       setEventos(await resp.json())
     } catch {
       toast.error("Erro ao carregar eventos")
+    }
+  }
+
+  // ===== NOVA FUNÇÃO PARA DESTAQUE FICTÍCIO =====
+  async function promoverDestaqueFicticio(id) {
+    const token = getToken();
+    const ate = new Date();
+    ate.setDate(ate.getDate() + 7); // 7 dias no futuro
+    try {
+      const resp = await fetch(`/api/admin/${id}/destaque`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          destaque: true,
+          destaquePagoAte: ate.toISOString(),
+        }),
+      });
+      if (!resp.ok) throw new Error();
+      toast.success("Evento promovido para o banner por 7 dias!");
+      fetchEventos();
+    } catch {
+      toast.error("Erro ao promover destaque");
+    }
+  }
+
+  async function handleFileSelectDestaque(e) {
+    const file = e.target.files[0]
+    if (!file) return
+    const previewUrl = URL.createObjectURL(file)
+    setForm(f => ({ ...f, imagemDestaque: previewUrl }))
+    const formData = new FormData()
+    formData.append("file", file)
+    try {
+      const resp = await fetch('/api/upload', { method: 'POST', body: formData })
+      if (!resp.ok) throw new Error()
+      const { url } = await resp.json()
+      setForm(f => ({ ...f, imagemDestaque: url }))
+    } catch {
+      toast.error('Falha ao enviar a imagem de destaque')
+    }
+  }
+
+  // Função para promover/remover destaque do evento
+  async function handlePromoverDestaque(id, destaqueAtual) {
+    try {
+      const token = getToken()
+      const resp = await fetch(`/api/admin/${id}/destaque`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ destaque: !destaqueAtual }),
+      })
+      if (!resp.ok) throw new Error()
+      toast.success(
+        !destaqueAtual
+          ? "Evento promovido ao banner!"
+          : "Evento removido do banner"
+      )
+      fetchEventos()
+    } catch {
+      toast.error("Erro ao atualizar destaque")
     }
   }
 
@@ -207,15 +273,53 @@ export default function AdminPanel() {
           ) : (
             <ul className="space-y-3">
               {sorted.map(ev => (
-                <li key={ev.id} className={`flex justify-between items-center p-4 rounded-xl border shadow ${ev.destaque ? 'border-yellow-500 bg-[#1e293b]' : 'border-gray-600 bg-[#0f172a]'}`}>
+                <li
+                  key={ev.id}
+                  className={`flex justify-between items-center p-4 rounded-xl border shadow ${ev.destaque
+                    ? "border-yellow-500 bg-[#1e293b]"
+                    : "border-gray-600 bg-[#0f172a]"
+                    }`}
+                >
                   <div>
                     <strong className="text-white">{ev.nome}</strong>
-                    <span className="ml-2 text-xs text-gray-400">{ev.data && new Date(ev.data).toLocaleString('pt-BR')}</span>
-                    <div className="text-sm text-gray-400">{ev.local} — {ev.categoria} — {ev.preco}</div>
+                    <span className="ml-2 text-xs text-gray-400">
+                      {ev.data && new Date(ev.data).toLocaleString("pt-BR")}
+                    </span>
+                    <div className="text-sm text-gray-400">
+                      {ev.local} — {ev.categoria} — {ev.preco}
+                    </div>
+                    {/* Mostra até quando está em destaque pago */}
+                    {ev.destaque && ev.destaquePagoAte && (
+                      <span className="ml-2 text-yellow-300 font-bold text-xs block">
+                        Destaque ativo até {new Date(ev.destaquePagoAte).toLocaleString("pt-BR")}
+                      </span>
+                    )}
                   </div>
                   <div className="flex space-x-4">
-                    <button onClick={() => openModal(false, ev.id)} className="text-blue-400 hover:underline">Editar</button>
-                    <button onClick={() => handleExcluir(ev.id)} disabled={deleteId === ev.id} className={`${deleteId === ev.id ? 'text-gray-500' : 'text-red-400 hover:underline'}`}>{deleteId === ev.id ? '...' : 'Excluir'}</button>
+                    {/* Botão novo para simular contratação do plano */}
+                    <button
+                      onClick={() => promoverDestaqueFicticio(ev.id)}
+                      className="px-3 py-1 rounded font-bold bg-yellow-400 text-black hover:bg-yellow-500"
+                    >
+                      Contratar destaque 7 dias
+                    </button>
+                    {/* Botões padrão */}
+                    <button
+                      onClick={() => openModal(false, ev.id)}
+                      className="text-blue-400 hover:underline"
+                    >
+                      Editar
+                    </button>
+                    <button
+                      onClick={() => handleExcluir(ev.id)}
+                      disabled={deleteId === ev.id}
+                      className={`${deleteId === ev.id
+                        ? "text-gray-500"
+                        : "text-red-400 hover:underline"
+                        }`}
+                    >
+                      {deleteId === ev.id ? "..." : "Excluir"}
+                    </button>
                   </div>
                 </li>
               ))}
@@ -237,7 +341,7 @@ export default function AdminPanel() {
                   <option value="" disabled>-- Categoria * --</option>
                   {CATEGORIAS.map(cat => <option key={cat} value={cat}>{cat}</option>)}
                 </select>
-                {/* Upload de arquivo **/}
+                {/* Upload de arquivo */}
                 <div>
                   <label className="block text-white mb-1">Upload de imagem</label>
                   <input type="file" accept="image/*" onChange={handleFileSelect} className="w-full text-white" />
@@ -258,3 +362,4 @@ export default function AdminPanel() {
     </>
   )
 }
+

@@ -24,16 +24,18 @@ export default function Home() {
       try {
         const res = await fetch('/api/eventos')
         if (res.ok) {
-          const list = await res.json()
-          // Destaques = só eventos com destaque
-          const destaqueEvents = list
+          // Corrige: Espera { eventos, total }
+          const { eventos = [] } = await res.json()
+          // Destaques = só eventos com destaque e imagem
+          const destaqueEvents = eventos
             .filter(ev => ev.destaque && ev.imagem)
             .sort((a, b) => new Date(a.data) - new Date(b.data))
           setDestaques(destaqueEvents)
           // Próximos eventos = próximos por data (não importa destaque)
-          const proximosEv = list
+          const now = new Date()
+          const proximosEv = eventos
             .map(ev => ({ ...ev, date: new Date(ev.data) }))
-            .filter(ev => ev.date >= new Date())
+            .filter(ev => ev.date >= now)
             .sort((a, b) => a.date - b.date)
             .slice(0, 3)
           setProximos(proximosEv)
@@ -108,22 +110,26 @@ export default function Home() {
             Próximos Eventos
           </h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-            {proximos.map(ev => (
-              <div key={ev.id} className="bg-[#1f2937] p-4 rounded-xl shadow-md">
-                <h4 className="text-lg font-semibold text-white mb-1">
-                  {ev.nome}
-                </h4>
-                <p className="text-sm text-gray-400 mb-2">
-                  {ev.date.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' })}
-                </p>
-                <Link
-                  href={`/eventos/${ev.id}`}
-                  className="text-[#0EA5E9] hover:underline text-sm"
-                >
-                  Ver detalhes →
-                </Link>
-              </div>
-            ))}
+            {proximos.length === 0 ? (
+              <p className="text-gray-400 col-span-3 text-center">Nenhum evento encontrado.</p>
+            ) : (
+              proximos.map(ev => (
+                <div key={ev.id} className="bg-[#1f2937] p-4 rounded-xl shadow-md">
+                  <h4 className="text-lg font-semibold text-white mb-1">
+                    {ev.nome}
+                  </h4>
+                  <p className="text-sm text-gray-400 mb-2">
+                    {ev.date?.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' })}
+                  </p>
+                  <Link
+                    href={`/eventos/${ev.id}`}
+                    className="text-[#0EA5E9] hover:underline text-sm"
+                  >
+                    Ver detalhes →
+                  </Link>
+                </div>
+              ))
+            )}
           </div>
         </section>
 

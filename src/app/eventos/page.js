@@ -5,6 +5,7 @@ import EventCard from "../components/EventCard"
 import AdBanner from "../components/AdBanner"
 import SideBanner from "../components/SideBanner"
 import Footer from "../components/Footer"
+import HeroCarousel from "../components/HeroCarousel"
 
 const categoriasMock = [
   "Promoções",
@@ -32,6 +33,7 @@ export default function EventosPage() {
   const [total, setTotal] = useState(0)
   const loadingRef = useRef(null)
   const [loading, setLoading] = useState(false)
+  const [destaques, setDestaques] = useState([])
 
   // Onboarding
   useEffect(() => {
@@ -91,6 +93,20 @@ export default function EventosPage() {
     } catch { }
   }
 
+  useEffect(() => {
+    async function fetchData() {
+      const res = await fetch("/api/eventos")
+      if (res.ok) {
+        const { eventos } = await res.json()
+        setEventos(eventos)
+        setDestaques(
+          eventos.filter(ev => ev.destaque && ev.imagem)
+        )
+      }
+    }
+    fetchData()
+  }, [])
+
   async function handleFavoritar(eventId) {
     const isFav = favoritos.has(eventId)
     const method = isFav ? "DELETE" : "POST"
@@ -149,13 +165,21 @@ export default function EventosPage() {
     <div className="bg-[#111827] text-white min-h-screen flex flex-col">
       <NavMenu />
       {/* Banner de patrocínio */}
-      <AdBanner>
-        <img
-          src="https://placehold.co/728x90/transparent/000000?text=Banner+Exemplo"
-          alt="Banner Exemplo"
-          className="block w-full h-auto"
-        />
-      </AdBanner>
+      {destaques.length > 0 && (
+        <div className="mb-8">
+          <HeroCarousel
+            slides={destaques.map(ev => ({
+              src: ev.imagem,
+              alt: ev.nome,
+              href: `/eventos/${ev.id}`,
+              className: "rounded-xl shadow-xl border-2 border-yellow-400" // exemplo visual
+            }))}
+            title="Eventos em Destaque"
+            interval={6000}
+            height="h-40 md:h-80"
+          />
+        </div>
+      )}
       {/* Onboarding modal */}
       {showOnboarding && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">

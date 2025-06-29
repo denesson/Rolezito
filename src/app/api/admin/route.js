@@ -2,30 +2,20 @@ import { PrismaClient } from "@prisma/client"
 import { NextResponse } from "next/server"
 import jwt from "jsonwebtoken"
 
+// Singleton do Prisma para evitar erro em dev hot reload
 const prisma = global.prisma || new PrismaClient()
 if (process.env.NODE_ENV !== "production") global.prisma = prisma
 
-// Função utilitária para checar permissão de admin/produtor no token
+// Função utilitária para checar permissão no token (admin ou produtor)
 async function authorize(req) {
   const auth = req.headers.get("authorization")
-  if (!auth) {
-    console.warn("Authorization header ausente")
-    return null
-  }
+  if (!auth) return null
   const token = auth.replace("Bearer ", "")
   try {
     const user = jwt.verify(token, process.env.JWT_SECRET)
-    // DEBUG: log do token decodificado (comente em produção)
-    // console.log("Payload JWT:", user)
-    // Checa role OU admin:true
-    if (
-      user.role === "admin" ||
-      user.role === "produtor" ||
-      user.admin === true // retrocompatibilidade
-    ) {
+    if (user.role === "admin" || user.role === "produtor" || user.admin === true) {
       return user
     }
-    console.warn("Token sem permissão:", user)
     return null
   } catch (err) {
     console.error("JWT inválido:", err.message)
@@ -33,14 +23,20 @@ async function authorize(req) {
   }
 }
 
-// GET /api/admin — lista todos os eventos (autenticado)
+// GET /api/admin/eventos — lista eventos do produtor OU todos se admin
 export async function GET(req) {
   const user = await authorize(req)
   if (!user) {
     return NextResponse.json({ error: "Não autorizado" }, { status: 403 })
   }
   try {
+    // Só vê seus eventos se for produtor, admin vê todos
+    const where = user.role === "produtor"
+      ? { produtorId: user.id }
+      : {}
+
     const eventos = await prisma.evento.findMany({
+      where,
       orderBy: { data: "asc" }
     })
     return NextResponse.json(eventos)
@@ -50,24 +46,41 @@ export async function GET(req) {
   }
 }
 
-// POST /api/admin — cria novo evento (autenticado)
+// POST /api/admin/eventos — cria novo evento vinculado ao usuário criador
 export async function POST(req) {
   const user = await authorize(req)
   if (!user) {
     return NextResponse.json({ error: "Não autorizado" }, { status: 403 })
   }
   try {
-    const { nome, data, local, descricao, preco, categoria, imagem, destaque } = await req.json()
+    const body = await req.json()
+    const {
+      nome,
+      data: dataEvento,
+      local,
+      descricao,
+      preco,
+      categoria,
+      imagem,
+      destaque
+    } = body
+
+    // Validação mínima
+    if (!nome || !dataEvento || !local || !descricao || !preco || !categoria) {
+      return NextResponse.json({ error: "Preencha todos os campos obrigatórios" }, { status: 400 })
+    }
+
     const novo = await prisma.evento.create({
       data: {
         nome,
-        data: data ? new Date(data) : new Date(),
+        data: new Date(dataEvento),
         local,
         descricao,
         preco,
         categoria,
         imagem: imagem || "",
         destaque: destaque ?? false,
+        produtorId: user.id, // <-- vincula o evento ao usuário que criou
       },
     })
     return NextResponse.json(novo, { status: 201 })

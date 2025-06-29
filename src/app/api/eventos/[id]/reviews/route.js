@@ -1,21 +1,7 @@
 // src/app/api/eventos/[id]/reviews/route.js
 import { NextResponse } from "next/server"
 import prisma from "../../../../../../lib/prisma"
-import jwt from "jsonwebtoken"
-import { cookies } from "next/headers"
-
-// Puxa o usuário logado a partir do cookie "token"
-async function getCurrentUser() {
-  const cookieStore = cookies()
-  const token = cookieStore.get("token")?.value
-  if (!token) return null
-  try {
-    const { userId } = jwt.verify(token, process.env.JWT_SECRET)
-    return await prisma.usuario.findUnique({ where: { id: userId } })
-  } catch {
-    return null
-  }
-}
+import { getCurrentUser } from "../../../../../../lib/auth"
 
 // GET: lista todas as reviews de um evento
 export async function GET(req, { params }) {
@@ -58,7 +44,7 @@ export async function POST(req, { params }) {
   const review = await prisma.review.create({
     data: {
       comentario: comentario.trim(),
-      rating: stars,        // ← passo `stars` para `rating`
+      rating: stars,        // ← passa `stars` para `rating`
       userId: user.id,
       eventId,
     },

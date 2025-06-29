@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { PrismaClient } from "@prisma/client"
 import webpush from "web-push"
 import jwt from "jsonwebtoken" // npm i jsonwebtoken
+import { getCurrentUser } from "../../../../lib/auth" // Função utilitária para obter usuário atual
 
 const prisma = new PrismaClient()
 
@@ -36,17 +37,24 @@ async function authorize(request) {
 // GET: Listar eventos paginados (para scroll infinito)
 export async function GET(request) {
   try {
+    const user = await getCurrentUser()
+    if (!user) return NextResponse.json({ erro: "Não autorizado" }, { status: 401 })
+
     const { searchParams } = new URL(request.url)
     const page = Number(searchParams.get("page") || 1)
     const limit = Number(searchParams.get("limit") || 9)
     const skip = (page - 1) * limit
 
+    // Só filtra por produtor se NÃO for admin
+    const where = user.role === "produtor" ? { produtorId: user.id } : {}
+
     const eventos = await prisma.evento.findMany({
+      where,
       orderBy: { data: "asc" },
       skip,
       take: limit,
     })
-    const total = await prisma.evento.count()
+    const total = await prisma.evento.count({ where })
     return NextResponse.json({ eventos, total })
   } catch (err) {
     console.error("Erro GET /api/eventos:", err)
@@ -80,6 +88,7 @@ export async function POST(request) {
         categoria,
         imagem: imagem || "",
         destaque: destaque || false,
+        produtorId: user.id,
       }
     })
 

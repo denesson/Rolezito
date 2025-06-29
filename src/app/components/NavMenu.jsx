@@ -23,7 +23,7 @@ export default function NavMenu() {
 
   const adminLinks = [
     { href: "/admin", label: "Gerenciar Eventos" },
-    { href: "/admin/usuarios", label: "Gerenciar Usuários" },
+    { href: "/admin/usuarios", label: "Gerenciar Usuários", onlyAdmin: true },
   ]
 
   const isActive = (href) => pathname === href
@@ -52,44 +52,43 @@ export default function NavMenu() {
             <li key={href}>
               <Link
                 href={href}
-                className={`px-4 py-2 rounded-full font-semibold transition ${
-                  isActive(href)
-                    ? "bg-[#E11D48] text-white"
-                    : "text-white hover:bg-[#F43F5E]"
-                }`}
+                className={`px-4 py-2 rounded-full font-semibold transition ${isActive(href)
+                  ? "bg-[#E11D48] text-white"
+                  : "text-white hover:bg-[#F43F5E]"
+                  }`}
               >
                 {label}
               </Link>
             </li>
           ))}
 
-          {user?.admin && (
+          {user && (user.admin || user.role === "produtor") && (
             <li className="relative group">
               <button
-                className={`px-4 py-2 rounded-full font-semibold flex items-center transition ${
-                  adminLinks.some(a => isActive(a.href))
-                    ? "bg-[#E11D48] text-white"
-                    : "text-white hover:bg-[#F43F5E]"
-                }`}
+                className={`px-4 py-2 rounded-full font-semibold flex items-center transition ${adminLinks.some(a => isActive(a.href))
+                  ? "bg-[#E11D48] text-white"
+                  : "text-white hover:bg-[#F43F5E]"
+                  }`}
               >
                 Administração
                 <span className="ml-1 text-sm">▾</span>
               </button>
               <ul className="absolute right-0 mt-2 w-48 bg-[#1F2937] border border-[#334155] rounded shadow-lg opacity-0 group-hover:opacity-100 transition-opacity">
-                {adminLinks.map(({ href, label }) => (
-                  <li key={href}>
-                    <Link
-                      href={href}
-                      className={`block px-4 py-2 text-sm ${
-                        isActive(href)
+                {adminLinks
+                  .filter(link => !link.onlyAdmin || user?.admin)
+                  .map(({ href, label }) => (
+                    <li key={href}>
+                      <Link
+                        href={href}
+                        className={`block px-4 py-2 text-sm ${isActive(href)
                           ? "bg-[#334155] text-white"
                           : "text-[#9CA3AF] hover:bg-[#334155] hover:text-white"
-                      }`}
-                    >
-                      {label}
-                    </Link>
-                  </li>
-                ))}
+                          }`}
+                      >
+                        {label}
+                      </Link>
+                    </li>
+                  ))}
               </ul>
             </li>
           )}
@@ -150,33 +149,33 @@ export default function NavMenu() {
                 key={href}
                 href={href}
                 onClick={() => setOpen(false)}
-                className={`block px-4 py-2 rounded-full font-semibold transition ${
-                  isActive(href)
-                    ? "bg-[#E11D48] text-white"
-                    : "text-white hover:bg-[#F43F5E]"
-                }`}
+                className={`block px-4 py-2 rounded-full font-semibold transition ${isActive(href)
+                  ? "bg-[#E11D48] text-white"
+                  : "text-white hover:bg-[#F43F5E]"
+                  }`}
               >
                 {label}
               </Link>
             ))}
 
-            {user?.admin && (
+            {user && (user.admin || user.role === "produtor") && (
               <>
                 <div className="pt-4 border-t border-gray-700"></div>
-                {adminLinks.map(({ href, label }) => (
-                  <Link
-                    key={href}
-                    href={href}
-                    onClick={() => setOpen(false)}
-                    className={`block px-4 py-2 font-semibold rounded-full transition ${
-                      isActive(href)
-                        ? "bg-[#E11D48] text-white"
-                        : "text-white hover:bg-[#F43F5E]"
-                    }`}
-                  >
-                    {label}
-                  </Link>
-                ))}
+                {adminLinks
+                  .filter(link => !link.onlyAdmin || user?.admin)
+                  .map(({ href, label }) => (
+                    <Link
+                      key={href}
+                      href={href}
+                      onClick={() => setOpen(false)}
+                      className={`block px-4 py-2 font-semibold rounded-full transition ${isActive(href)
+                          ? "bg-[#E11D48] text-white"
+                          : "text-white hover:bg-[#F43F5E]"
+                        }`}
+                    >
+                      {label}
+                    </Link>
+                  ))}
               </>
             )}
 
@@ -221,6 +220,6 @@ export default function NavMenu() {
           `}</style>
         </div>
       )}
-        </nav>
-      );
-    }
+    </nav>
+  );
+}

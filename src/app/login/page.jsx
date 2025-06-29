@@ -1,22 +1,23 @@
-// src/app/login/page.jsx
 "use client"
 import React, { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import NavMenu from "../components/NavMenu"
 import Footer from "../components/Footer"
+import { useAuth } from "../../hooks/useAuth" // AJUSTE O CAMINHO conforme seu projeto
 
 export default function LoginPage() {
   const router = useRouter()
+  const { login } = useAuth()
   const [nome, setNome] = useState("")
   const [senha, setSenha] = useState("")
   const [erro, setErro] = useState("")
 
-  // Redireciona se já estiver logado (token no localStorage)
+  // Redireciona se já estiver logado (user no localStorage)
   useEffect(() => {
     if (typeof window !== "undefined") {
-      const token = localStorage.getItem("token")
-      if (token) router.replace("/eventos")
+      const user = localStorage.getItem("user")
+      if (user) router.replace("/eventos")
     }
   }, [router])
 
@@ -24,25 +25,7 @@ export default function LoginPage() {
     e.preventDefault()
     setErro("")
     try {
-      const res = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ nome, senha }),
-      })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.erro || "Erro ao logar")
-
-      // Salva token e user no localStorage - role vindo do backend!
-      localStorage.setItem("token", data.token)
-      localStorage.setItem(
-        "user",
-        JSON.stringify({
-          nome: data.nome,      // nome correto do banco
-          email: data.email,
-          admin: data.admin,
-          role: data.role,      // role correta do banco
-        })
-      )
+      await login({ nome, senha }) // Usa o contexto Auth!
       router.push("/eventos")
     } catch (err) {
       setErro(err.message || "Erro ao logar")

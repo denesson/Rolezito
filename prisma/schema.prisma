@@ -19,6 +19,9 @@ model Evento {
   criadoEm  DateTime  @default(now())
   destaque  Boolean   @default(false)
 
+  produtor   Usuario   @relation("EventosDoProdutor", fields: [produtorId], references: [id])
+  produtorId Int
+
   // back‐relation para Reviews e Favoritos
   favoritos Favorito[]
   reviews   Review[]
@@ -42,6 +45,7 @@ model Usuario {
   // back‐relation para Reviews e Favoritos
   favoritos Favorito[]
   reviews   Review[]
+  eventos   Evento[]   @relation("EventosDoProdutor")
 }
 
 model Favorito {

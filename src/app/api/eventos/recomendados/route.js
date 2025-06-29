@@ -9,8 +9,8 @@ async function getCurrentUser() {
   const token = store.get('token')?.value
   if (!token) return null
   try {
-    const { userId } = jwt.verify(token, process.env.JWT_SECRET)
-    return await prisma.usuario.findUnique({ where: { id: userId } })
+    const { id } = jwt.verify(token, process.env.JWT_SECRET) // <-- Troca aqui!
+    return await prisma.usuario.findUnique({ where: { id } })
   } catch {
     return null
   }

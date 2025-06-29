@@ -19,8 +19,8 @@ model Evento {
   criadoEm  DateTime  @default(now())
   destaque  Boolean   @default(false)
 
-  produtor   Usuario   @relation("EventosDoProdutor", fields: [produtorId], references: [id])
-  produtorId Int
+  produtorId Int? // <--- o "?" deixa o campo nullable (aceita null)
+  produtor   Usuario?   @relation("EventosDoProdutor", fields: [produtorId], references: [id])
 
   // back‐relation para Reviews e Favoritos
   favoritos Favorito[]
